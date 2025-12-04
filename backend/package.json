@@ -1,6 +1,5 @@
 {
   "name": "lms-backend",
-  "author": "Mahin",
   "version": "1.0.0",
   "description": "Learning Management System Backend with Gamified Badges",
   "main": "server.js",
