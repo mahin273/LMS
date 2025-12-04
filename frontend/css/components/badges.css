@@ -1,0 +1,250 @@
+/* Badge Component Styles - Pure CSS Achievement Badges */
+
+/* Base Badge */
+.badge {
+    position: relative;
+    width: 80px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-base);
+    /* Hexagon shape */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}
+
+.badge-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-align: center;
+}
+
+.badge-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.badge-label {
+    font-size: 9px;
+    font-weight: var(--font-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Badge Sizes */
+.badge-sm {
+    width: 50px;
+    height: 58px;
+}
+
+.badge-sm .badge-icon {
+    font-size: 16px;
+}
+
+.badge-sm .badge-label {
+    font-size: 7px;
+}
+
+.badge-lg {
+    width: 100px;
+    height: 115px;
+}
+
+.badge-lg .badge-icon {
+    font-size: 32px;
+}
+
+.badge-lg .badge-label {
+    font-size: 11px;
+}
+
+/* Bronze Badge */
+.badge-bronze {
+    background: linear-gradient(135deg, var(--badge-bronze-start), var(--badge-bronze-end));
+    box-shadow: 0 0 20px var(--badge-bronze-glow);
+    color: #FFF8DC;
+}
+
+/* Silver Badge */
+.badge-silver {
+    background: linear-gradient(135deg, var(--badge-silver-start), var(--badge-silver-end));
+    box-shadow: 0 0 20px var(--badge-silver-glow);
+    color: #333;
+}
+
+/* Gold Badge */
+.badge-gold {
+    background: linear-gradient(135deg, var(--badge-gold-start), var(--badge-gold-end));
+    box-shadow: 0 0 25px var(--badge-gold-glow);
+    color: #5C4600;
+}
+
+/* Master Badge */
+.badge-master {
+    background: linear-gradient(135deg, var(--badge-master-start), var(--badge-master-end));
+    box-shadow: 0 0 30px var(--badge-master-glow);
+    color: white;
+    animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 30px var(--badge-master-glow);
+    }
+
+    50% {
+        box-shadow: 0 0 50px rgba(147, 51, 234, 0.8);
+    }
+}
+
+/* Badge Locked State */
+.badge-locked {
+    background: var(--gray-300);
+    box-shadow: none;
+    color: var(--gray-500);
+    opacity: 0.6;
+}
+
+.badge-locked .badge-icon {
+    filter: grayscale(100%);
+}
+
+/* Inline Badge (for text) */
+.badge-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-full);
+    clip-path: none;
+    width: auto;
+    height: auto;
+}
+
+.badge-inline-bronze {
+    background: linear-gradient(135deg, var(--badge-bronze-start), var(--badge-bronze-end));
+    color: white;
+}
+
+.badge-inline-silver {
+    background: linear-gradient(135deg, var(--badge-silver-start), var(--badge-silver-end));
+    color: #333;
+}
+
+.badge-inline-gold {
+    background: linear-gradient(135deg, var(--badge-gold-start), var(--badge-gold-end));
+    color: #5C4600;
+}
+
+.badge-inline-master {
+    background: linear-gradient(135deg, var(--badge-master-start), var(--badge-master-end));
+    color: white;
+}
+
+/* Badge Row */
+.badge-row {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+/* Badge with Progress Indicator */
+.badge-progress {
+    position: relative;
+}
+
+.badge-progress-ring {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 3px solid var(--gray-200);
+}
+
+.badge-progress-fill {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: var(--primary-500);
+    transform: rotate(-90deg);
+}
+
+/* Badge Showcase Grid */
+.badge-showcase {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: var(--space-6);
+    justify-items: center;
+}
+
+/* Badge Card */
+.badge-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+}
+
+.badge-card-title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--gray-800);
+}
+
+.badge-card-subtitle {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+}
+
+/* Status Badges (different from achievement badges) */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge-success {
+    background: var(--success-100);
+    color: var(--success-700);
+}
+
+.status-badge-warning {
+    background: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.status-badge-danger {
+    background: var(--danger-100);
+    color: var(--danger-700);
+}
+
+.status-badge-primary {
+    background: var(--primary-100);
+    color: var(--primary-700);
+}
+
+.status-badge-gray {
+    background: var(--gray-100);
+    color: var(--gray-700);
+}

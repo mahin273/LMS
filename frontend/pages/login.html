@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - LearnHub</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+
+<body>
+    <div class="auth-layout">
+        <div class="auth-split">
+            <!-- Left: Image Side -->
+            <div class="auth-image">
+                <div class="auth-image-content">
+                    <div class="auth-image-logo">📚</div>
+                    <h1 class="auth-image-title">Welcome Back!</h1>
+                    <p class="auth-image-text">Continue your learning journey and earn more badges.</p>
+                </div>
+            </div>
+
+            <!-- Right: Form Side -->
+            <div class="auth-form-container">
+                <div class="auth-form">
+                    <div class="auth-form-header">
+                        <div class="auth-form-logo">📚</div>
+                        <h1 class="auth-form-title">Sign In</h1>
+                        <p class="auth-form-subtitle">Enter your credentials to access your account</p>
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label class="form-label form-label-required">Email</label>
+                            <input type="email" class="form-input" id="email" placeholder="you@example.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label form-label-required">Password</label>
+                            <input type="password" class="form-input" id="password" placeholder="Enter your password"
+                                required>
+                        </div>
+
+                        <div class="form-group flex justify-between items-center">
+                            <label class="form-check">
+                                <input type="checkbox" class="form-check-input">
+                                <span class="form-check-label">Remember me</span>
+                            </label>
+                            <a href="#" class="link text-sm text-primary">Forgot password?</a>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                            Sign In
+                        </button>
+                    </form>
+
+                    <div class="auth-footer">
+                        Don't have an account? <a href="register.html">Create one</a>
+                    </div>
+
+                    <div id="errorMessage" class="form-error mt-4" style="display: none; justify-content: center;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import api from '../js/api/client.js';
+        import { redirectToDashboard, showToast } from '../js/utils/helpers.js';
+
+        // Check if already logged in
+        if (localStorage.getItem('accessToken')) {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            redirectToDashboard(user.role);
+        }
+
+        const form = document.getElementById('loginForm');
+        const errorEl = document.getElementById('errorMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Signing in...';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await api.post('/auth/login', { email, password });
+
+                if (response.success) {
+                    api.setTokens(response.data.tokens.accessToken, response.data.tokens.refreshToken);
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                    redirectToDashboard(response.data.user.role);
+                }
+            } catch (error) {
+                errorEl.textContent = error.message || 'Login failed. Please try again.';
+                errorEl.style.display = 'flex';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,173 @@
+/* Table Component Styles */
+
+.table-wrapper {
+    overflow-x: auto;
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.table th {
+    background: var(--gray-50);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    font-size: var(--text-sm);
+    color: var(--gray-700);
+}
+
+.table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Table Sizes */
+.table-sm th,
+.table-sm td {
+    padding: var(--space-3);
+}
+
+.table-lg th,
+.table-lg td {
+    padding: var(--space-5);
+}
+
+/* Striped Table */
+.table-striped tbody tr:nth-child(even) {
+    background: var(--gray-50);
+}
+
+/* Table Cell Variants */
+.table-cell-truncate {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.table-cell-actions {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+}
+
+.table-cell-avatar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.table-cell-avatar img {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+}
+
+/* Empty State */
+.table-empty {
+    padding: var(--space-12) var(--space-4);
+    text-align: center;
+}
+
+.table-empty-icon {
+    font-size: var(--text-4xl);
+    color: var(--gray-300);
+    margin-bottom: var(--space-4);
+}
+
+.table-empty-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--gray-700);
+    margin-bottom: var(--space-2);
+}
+
+.table-empty-text {
+    color: var(--gray-500);
+    margin-bottom: var(--space-6);
+}
+
+/* Sortable Headers */
+.table-sortable th {
+    cursor: pointer;
+    user-select: none;
+}
+
+.table-sortable th:hover {
+    background: var(--gray-100);
+}
+
+.table-sort-icon {
+    margin-left: var(--space-2);
+    color: var(--gray-400);
+}
+
+.table-sort-icon.active {
+    color: var(--primary-600);
+}
+
+/* Pagination */
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4);
+    border-top: 1px solid var(--gray-100);
+}
+
+.table-pagination-info {
+    font-size: var(--text-sm);
+    color: var(--gray-600);
+}
+
+.table-pagination-buttons {
+    display: flex;
+    gap: var(--space-1);
+}
+
+.table-pagination-btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.table-pagination-btn:hover:not(:disabled) {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+.table-pagination-btn.active {
+    background: var(--primary-600);
+    border-color: var(--primary-600);
+    color: white;
+}
+
+.table-pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

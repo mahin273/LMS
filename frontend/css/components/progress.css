@@ -1,0 +1,198 @@
+/* Progress Bar Component Styles */
+
+.progress {
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+
+/* Progress Sizes */
+.progress-sm {
+    height: 4px;
+}
+
+.progress-lg {
+    height: 12px;
+}
+
+.progress-xl {
+    height: 16px;
+}
+
+/* Progress Colors */
+.progress-bar.success {
+    background: linear-gradient(90deg, var(--success-500), var(--success-600));
+}
+
+.progress-bar.warning {
+    background: linear-gradient(90deg, var(--warning-500), var(--warning-600));
+}
+
+.progress-bar.danger {
+    background: linear-gradient(90deg, var(--danger-500), var(--danger-600));
+}
+
+/* Progress with Label */
+.progress-labeled {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.progress-labeled .progress {
+    flex: 1;
+}
+
+.progress-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    color: var(--gray-700);
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Progress with Milestones */
+.progress-milestones {
+    position: relative;
+    margin-bottom: var(--space-6);
+}
+
+.progress-milestone {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    background: var(--gray-200);
+    border: 3px solid white;
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    z-index: 1;
+}
+
+.progress-milestone.reached {
+    background: var(--primary-500);
+}
+
+.progress-milestone-label {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+    white-space: nowrap;
+}
+
+/* Badge Milestones */
+.progress-milestone[data-badge="bronze"] {
+    left: 25%;
+}
+
+.progress-milestone[data-badge="silver"] {
+    left: 50%;
+}
+
+.progress-milestone[data-badge="gold"] {
+    left: 90%;
+}
+
+.progress-milestone[data-badge="master"] {
+    left: 100%;
+}
+
+.progress-milestone[data-badge="bronze"].reached {
+    background: var(--badge-bronze-start);
+}
+
+.progress-milestone[data-badge="silver"].reached {
+    background: var(--badge-silver-start);
+}
+
+.progress-milestone[data-badge="gold"].reached {
+    background: var(--badge-gold-start);
+}
+
+.progress-milestone[data-badge="master"].reached {
+    background: var(--badge-master-start);
+}
+
+/* Circular Progress */
+.progress-circle {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.progress-circle-svg {
+    transform: rotate(-90deg);
+}
+
+.progress-circle-bg {
+    fill: none;
+    stroke: var(--gray-200);
+    stroke-width: 8;
+}
+
+.progress-circle-bar {
+    fill: none;
+    stroke: var(--primary-500);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 339.292;
+    stroke-dashoffset: 339.292;
+    transition: stroke-dashoffset var(--transition-slower);
+}
+
+.progress-circle-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-circle-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.progress-circle-label {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+    margin-top: var(--space-1);
+}
+
+/* Animated Progress */
+.progress-animated .progress-bar {
+    animation: progress-stripes 1s linear infinite;
+    background-image: linear-gradient(45deg,
+            rgba(255, 255, 255, 0.15) 25%,
+            transparent 25%,
+            transparent 50%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(255, 255, 255, 0.15) 75%,
+            transparent 75%);
+    background-size: 1rem 1rem;
+}
+
+@keyframes progress-stripes {
+    from {
+        background-position: 1rem 0;
+    }
+
+    to {
+        background-position: 0 0;
+    }
+}

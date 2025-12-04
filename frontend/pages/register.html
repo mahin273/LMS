@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - LearnHub</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+
+<body>
+    <div class="auth-layout">
+        <div class="auth-split">
+            <div class="auth-image">
+                <div class="auth-image-content">
+                    <div class="auth-image-logo">📚</div>
+                    <h1 class="auth-image-title">Start Learning Today</h1>
+                    <p class="auth-image-text">Join our community and begin your journey to mastery.</p>
+                </div>
+            </div>
+
+            <div class="auth-form-container">
+                <div class="auth-form">
+                    <div class="auth-form-header">
+                        <div class="auth-form-logo">📚</div>
+                        <h1 class="auth-form-title">Create Account</h1>
+                        <p class="auth-form-subtitle">Fill in your details to get started</p>
+                    </div>
+
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label class="form-label form-label-required">Full Name</label>
+                            <input type="text" class="form-input" id="name" placeholder="John Doe" required
+                                minlength="2">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label form-label-required">Email</label>
+                            <input type="email" class="form-input" id="email" placeholder="you@example.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label form-label-required">Password</label>
+                            <input type="password" class="form-input" id="password" placeholder="Min 8 characters"
+                                required minlength="8">
+                            <p class="form-help">Must contain uppercase, lowercase, and a number</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">I want to</label>
+                            <div class="auth-role-options">
+                                <label class="auth-role-option selected">
+                                    <input type="radio" name="role" value="student" checked>
+                                    <div class="auth-role-icon">🎓</div>
+                                    <div class="auth-role-title">Learn</div>
+                                    <div class="auth-role-desc">Take courses and earn badges</div>
+                                </label>
+                                <label class="auth-role-option">
+                                    <input type="radio" name="role" value="instructor">
+                                    <div class="auth-role-icon">👨‍🏫</div>
+                                    <div class="auth-role-title">Teach</div>
+                                    <div class="auth-role-desc">Create and manage courses</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">
+                            Create Account
+                        </button>
+                    </form>
+
+                    <div class="auth-footer">
+                        Already have an account? <a href="login.html">Sign in</a>
+                    </div>
+
+                    <div id="errorMessage" class="form-error mt-4" style="display: none; justify-content: center;">
+                    </div>
+                    <div id="successMessage" class="text-success text-center mt-4" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import api from '../js/api/client.js';
+        import { redirectToDashboard } from '../js/utils/helpers.js';
+
+        // Role selection UI
+        document.querySelectorAll('.auth-role-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.auth-role-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+
+        const form = document.getElementById('registerForm');
+        const errorEl = document.getElementById('errorMessage');
+        const successEl = document.getElementById('successMessage');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account...';
+
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: document.querySelector('input[name="role"]:checked').value
+            };
+
+            try {
+                const response = await api.post('/auth/register', data);
+
+                if (response.success) {
+                    api.setTokens(response.data.tokens.accessToken, response.data.tokens.refreshToken);
+                    localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                    if (data.role === 'instructor') {
+                        successEl.textContent = 'Account created! Awaiting admin approval.';
+                        successEl.style.display = 'block';
+                        setTimeout(() => window.location.href = 'login.html', 2000);
+                    } else {
+                        redirectToDashboard(response.data.user.role);
+                    }
+                }
+            } catch (error) {
+                errorEl.textContent = error.message || 'Registration failed.';
+                errorEl.style.display = 'flex';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,193 @@
+/* Button Component Styles */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+    line-height: 1.5;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    border: 1px solid transparent;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Button Sizes */
+.btn-sm {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+}
+
+.btn-lg {
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-base);
+}
+
+.btn-xl {
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-lg);
+}
+
+/* Primary Button */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    color: white;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background: white;
+    color: var(--gray-700);
+    border-color: var(--gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--gray-50);
+    border-color: var(--gray-400);
+}
+
+/* Success Button */
+.btn-success {
+    background: linear-gradient(135deg, var(--success-500), var(--success-600));
+    color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--success-600), var(--success-700));
+}
+
+/* Danger Button */
+.btn-danger {
+    background: linear-gradient(135deg, var(--danger-500), var(--danger-600));
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--danger-600), var(--danger-700));
+}
+
+/* Warning Button */
+.btn-warning {
+    background: linear-gradient(135deg, var(--warning-500), var(--warning-600));
+    color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--warning-600), var(--warning-700));
+}
+
+/* Ghost Button */
+.btn-ghost {
+    background: transparent;
+    color: var(--gray-600);
+}
+
+.btn-ghost:hover:not(:disabled) {
+    background: var(--gray-100);
+    color: var(--gray-800);
+}
+
+/* Link Button */
+.btn-link {
+    background: transparent;
+    color: var(--primary-600);
+    padding: 0;
+}
+
+.btn-link:hover:not(:disabled) {
+    color: var(--primary-700);
+    text-decoration: underline;
+}
+
+/* Icon Button */
+.btn-icon {
+    padding: var(--space-2);
+    width: 40px;
+    height: 40px;
+}
+
+.btn-icon.btn-sm {
+    width: 32px;
+    height: 32px;
+    padding: var(--space-1);
+}
+
+.btn-icon.btn-lg {
+    width: 48px;
+    height: 48px;
+    padding: var(--space-3);
+}
+
+/* Full Width Button */
+.btn-block {
+    width: 100%;
+}
+
+/* Button Group */
+.btn-group {
+    display: inline-flex;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+}
+
+.btn-group .btn:first-child {
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.btn-group .btn:last-child {
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.btn-group .btn:not(:last-child) {
+    border-right: none;
+}
+
+/* Loading Button */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid;
+    border-color: currentColor transparent currentColor transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LearnHub</title>
+    <link rel="stylesheet" href="../css/main.css">
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">📚</div>
+                <span class="sidebar-brand">LearnHub</span>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-nav-section">
+                    <div class="sidebar-nav-title">Admin</div>
+                    <a href="#" class="sidebar-nav-item active">
+                        <span class="sidebar-nav-icon">📊</span>
+                        <span class="sidebar-nav-text">Dashboard</span>
+                    </a>
+                    <a href="#" class="sidebar-nav-item">
+                        <span class="sidebar-nav-icon">👥</span>
+                        <span class="sidebar-nav-text">Users</span>
+                    </a>
+                    <a href="#" class="sidebar-nav-item">
+                        <span class="sidebar-nav-icon">📚</span>
+                        <span class="sidebar-nav-text">Courses</span>
+                    </a>
+                    <a href="#" class="sidebar-nav-item" onclick="showApprovals()">
+                        <span class="sidebar-nav-icon">⏳</span>
+                        <span class="sidebar-nav-text">Pending Approvals</span>
+                    </a>
+                </div>
+            </nav>
+            <div class="sidebar-user">
+                <div class="sidebar-user-info">
+                    <div class="sidebar-user-avatar" id="userAvatar">AD</div>
+                    <div class="sidebar-user-details">
+                        <div class="sidebar-user-name" id="userName">Admin</div>
+                        <div class="sidebar-user-role">Administrator</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+            <header class="navbar">
+                <div class="navbar-left">
+                    <button class="navbar-toggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="h4 m-0">Admin Dashboard</h1>
+                </div>
+                <div class="navbar-right">
+                    <div class="navbar-user" onclick="toggleDropdown()">
+                        <div class="navbar-user-avatar" id="navAvatar">AD</div>
+                        <span class="navbar-user-chevron">▼</span>
+                        <div class="navbar-dropdown" id="userDropdown">
+                            <div class="navbar-dropdown-item" onclick="logout()">🚪 Logout</div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="page-content">
+                <!-- Stats -->
+                <div class="stats-grid mb-8">
+                    <div class="card">
+                        <div class="card-body stats-card">
+                            <div class="stats-card-icon primary">👥</div>
+                            <div class="stats-card-content">
+                                <div class="stats-card-value" id="statsUsers">0</div>
+                                <div class="stats-card-label">Total Users</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body stats-card">
+                            <div class="stats-card-icon success">📚</div>
+                            <div class="stats-card-content">
+                                <div class="stats-card-value" id="statsCourses">0</div>
+                                <div class="stats-card-label">Total Courses</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body stats-card">
+                            <div class="stats-card-icon warning">⏳</div>
+                            <div class="stats-card-content">
+                                <div class="stats-card-value" id="statsPending">0</div>
+                                <div class="stats-card-label">Pending Approvals</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pending Instructor Approvals -->
+                <section class="mb-8">
+                    <h2 class="h3 mb-6">Pending Instructor Approvals</h2>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Registered</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approvalsTable">
+                                <tr>
+                                    <td colspan="4" class="text-center p-6 text-muted">No pending approvals</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- All Users -->
+                <section>
+                    <h2 class="h3 mb-6">All Users</h2>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="5" class="text-center p-6 text-muted">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import api from '../js/api/client.js';
+        import { getInitials, formatDate, redirectToDashboard } from '../js/utils/helpers.js';
+
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!localStorage.getItem('accessToken')) window.location.href = 'login.html';
+        if (user.role !== 'admin') redirectToDashboard(user.role);
+
+        const initials = getInitials(user.name || 'Admin');
+        document.getElementById('userAvatar').textContent = initials;
+        document.getElementById('navAvatar').textContent = initials;
+        document.getElementById('userName').textContent = user.name;
+
+        async function loadData() {
+            try {
+                const [usersRes, pendingRes] = await Promise.all([
+                    api.get('/users'),
+                    api.get('/users/pending-approvals')
+                ]);
+
+                if (usersRes.success) {
+                    renderUsers(usersRes.data.users);
+                    document.getElementById('statsUsers').textContent = usersRes.data.pagination.total;
+                }
+
+                if (pendingRes.success) {
+                    renderPending(pendingRes.data.users);
+                    document.getElementById('statsPending').textContent = pendingRes.data.users.length;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td><span class="status-badge status-badge-primary">${u.role}</span></td>
+          <td><span class="status-badge status-badge-${u.isApproved ? 'success' : 'warning'}">${u.isApproved ? 'Active' : 'Pending'}</span></td>
+          <td class="table-cell-actions">
+            <button class="btn btn-sm btn-ghost text-danger" onclick="deleteUser('${u._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+        }
+
+        function renderPending(users) {
+            const tbody = document.getElementById('approvalsTable');
+            if (!users.length) return;
+            tbody.innerHTML = users.map(u => `
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>${formatDate(u.createdAt)}</td>
+          <td class="table-cell-actions">
+            <button class="btn btn-sm btn-success" onclick="approveUser('${u._id}')">Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="rejectUser('${u._id}')">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+        }
+
+        window.approveUser = async (id) => {
+            try {
+                await api.put(`/users/${id}/approve`);
+                loadData();
+            } catch (e) { alert(e.message); }
+        };
+
+        window.rejectUser = async (id) => {
+            if (!confirm('Reject this instructor?')) return;
+            try {
+                await api.put(`/users/${id}/reject`);
+                loadData();
+            } catch (e) { alert(e.message); }
+        };
+
+        window.deleteUser = async (id) => {
+            if (!confirm('Delete this user?')) return;
+            try {
+                await api.delete(`/users/${id}`);
+                loadData();
+            } catch (e) { alert(e.message); }
+        };
+
+        window.logout = () => { localStorage.clear(); window.location.href = 'login.html'; };
+        window.toggleDropdown = () => document.getElementById('userDropdown').classList.toggle('show');
+        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
+
+        loadData();
+    </script>
+</body>
+
+</html>
