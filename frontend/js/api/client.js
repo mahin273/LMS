@@ -26,10 +26,10 @@ class ApiClient {
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const headers = {
-            'Content-Type': 'application/json',
             ...options.headers,
         };
 
+        // Always add token first
         const token = this.getToken();
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -37,7 +37,11 @@ class ApiClient {
 
         // Handle FormData (file uploads)
         if (options.body instanceof FormData) {
-            delete headers['Content-Type'];
+            // Let browser set Content-Type with boundary
+        } else if (options.method && options.method !== 'GET' && options.method !== 'DELETE') {
+            headers['Content-Type'] = 'application/json';
+        } else if (!options.method || options.method === 'POST' || options.method === 'PUT') {
+            headers['Content-Type'] = 'application/json';
         }
 
         const config = {

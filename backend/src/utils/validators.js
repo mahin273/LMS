@@ -40,12 +40,16 @@ const schemas = {
         title: Joi.string().min(3).max(200).required(),
         description: Joi.string().min(10).max(5000).required(),
         thumbnail: Joi.string().uri().allow(''),
+        category: Joi.string().max(100),
+        difficulty: Joi.string().valid('beginner', 'intermediate', 'advanced'),
     }),
 
     updateCourse: Joi.object({
         title: Joi.string().min(3).max(200),
         description: Joi.string().min(10).max(5000),
         thumbnail: Joi.string().uri().allow(''),
+        category: Joi.string().max(100),
+        difficulty: Joi.string().valid('beginner', 'intermediate', 'advanced'),
         status: Joi.string().valid('draft', 'published', 'archived'),
     }),
 

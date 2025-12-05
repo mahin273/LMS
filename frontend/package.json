@@ -1,0 +1,8 @@
+{
+    "name": "lms-frontend",
+    "version": "1.0.0",
+    "description": "LMS Frontend",
+    "scripts": {
+        "dev": "npx -y http-server -p 5500 -c-1 --cors"
+    }
+}

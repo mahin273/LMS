@@ -234,6 +234,14 @@
         window.toggleDropdown = () => document.getElementById('userDropdown').classList.toggle('show');
         window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
 
+        // Scroll to pending approvals section
+        window.showApprovals = () => {
+            const approvalsSection = document.querySelector('section.mb-8');
+            if (approvalsSection) {
+                approvalsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+
         loadData();
     </script>
 </body>
