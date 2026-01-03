@@ -1,12 +1,12 @@
-import { useParams, useNavigate } from 'react-router-dom'; // Added useNavigate
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'; // Added useQueryClient
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/api/client';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Circle, Lock } from 'lucide-react'; // Need lucide-react icons
+import { CheckCircle, Circle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CoursePlayerPage() {
     const { courseId, lessonId } = useParams(); // URL optionally has lessonId
@@ -43,11 +43,16 @@ export default function CoursePlayerPage() {
             // Route path in lesson.routes.ts: router.post('/lessons/:lessonId/complete', ...)
             return client.post(`/lessons/${id}/complete`);
         },
-        onSuccess: (data) => {
-            // Show badge toast?
-            if (data.data.progress) {
-                // Update local state or refetch
-            }
+        onSuccess: (res) => {
+            toast.success("Lesson Completed!");
+
+            // Check if badge was awarded
+            // The backend `checkAndAwardBadges` doesn't explicitly return the badge in the same response 
+            // unless we updated the GamificationService to return it or the controller to forward it.
+            // But for now, let's just show completion.
+            // Ideally, backend returns { message: '...', progress: ..., newBadge: ... }
+
+            queryClient.invalidateQueries({ queryKey: ['course-content', courseId] });
         }
     });
 

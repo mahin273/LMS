@@ -18,6 +18,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+import { Toaster } from "@/components/ui/sonner"
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -58,6 +60,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </BrowserRouter>
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
   )

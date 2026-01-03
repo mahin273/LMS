@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Course, Enrollment, User, Badge, Lesson } from '../models';
+import { Course, Enrollment, User, Badge, Lesson, LessonProgress } from '../models';
 
 interface AuthRequest extends Request {
     user?: User;
@@ -35,11 +35,32 @@ export const getEnrolledCourses = async (req: AuthRequest, res: Response) => {
                     model: Badge,
                     as: 'badges',
                     where: { studentId },
-                    required: false // Left join, as they might not have badges 
-                }
+                    required: false // Left join, as they might not have badges
+                },
+                { model: Lesson, as: 'lessons', attributes: ['id'] }
             ]
         });
-        res.json(courses);
+
+        // Calculate progress manually since Sequelize aggregation with include is complex
+        // Efficient enough for typical course load
+        const coursesWithProgress = await Promise.all(courses.map(async (course: any) => {
+            const totalLessons = course.lessons.length;
+            if (totalLessons === 0) return { ...course.toJSON(), progress: 0 };
+
+            const completedCount = await LessonProgress.count({
+                where: {
+                    studentId,
+                    lessonId: course.lessons.map((l: any) => l.id)
+                }
+            });
+
+            return {
+                ...course.toJSON(),
+                progress: Math.round((completedCount / totalLessons) * 100)
+            };
+        }));
+
+        res.json(coursesWithProgress);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch enrolled courses' });
