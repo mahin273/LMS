@@ -1,0 +1,52 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import './models'; // Register models and associations
+import sequelize from './config/database';
+
+import authRoutes from './routes/auth.routes';
+import courseRoutes from './routes/course.routes';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+
+app.use('/api/auth', authRoutes);
+app.use('/api/courses', courseRoutes);
+
+
+app.get('/', (req, res) => {
+    res.json({ message: 'LMS API is running' });
+});
+
+const startServer = async () => {
+    let retries = 10;
+    while (retries > 0) {
+        try {
+            await sequelize.authenticate();
+            console.log('Database connected.');
+            await sequelize.sync({ alter: true });
+            console.log('Database synced.');
+
+            app.listen(PORT, () => {
+                console.log(`Server running on port ${PORT}`);
+            });
+            return;
+        } catch (error) {
+            console.error('Unable to connect to the database:', error);
+            retries -= 1;
+            console.log(`Retries left: ${retries}. Waiting 5s...`);
+            await new Promise(res => setTimeout(res, 5000));
+        }
+    }
+    console.error('Could not connect to database after retries. Exiting.');
+    process.exit(1);
+};
+
+startServer();
