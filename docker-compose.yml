@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: lms_frontend
     environment:
-      - VITE_API_URL=http://localhost:${PORT}
+      - VITE_API_URL=http://localhost:${PORT}/api
     ports:
       - "5174:5173"
     volumes:

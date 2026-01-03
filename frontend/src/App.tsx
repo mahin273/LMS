@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard'
 import CreateCoursePage from './pages/CreateCoursePage'
 import EditCoursePage from './pages/EditCoursePage'
 import CoursePlayerPage from './pages/CoursePlayerPage'
+import CoursesPage from './pages/CoursesPage'
+import LandingPage from './pages/LandingPage'
 import { isAuthenticated } from './lib/auth'
 
 const queryClient = new QueryClient()
@@ -35,6 +37,12 @@ function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/courses" element={
+              <ProtectedRoute>
+                <CoursesPage />
+              </ProtectedRoute>
+            } />
+
             <Route path="/courses/new" element={
               <ProtectedRoute>
                 <CreateCoursePage />
@@ -57,7 +65,7 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<LandingPage />} />
           </Routes>
         </BrowserRouter>
         <Toaster />
