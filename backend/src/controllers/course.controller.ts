@@ -104,7 +104,7 @@ export const enrollCourse = async (req: AuthRequest, res: Response) => {
     try {
         const [enrollment, created] = await Enrollment.findOrCreate({
             where: { studentId, courseId },
-            defaults: { studentId: studentId!, courseId, status: 'active' }
+            defaults: { studentId: studentId!, courseId, status: 'active', joinedAt: new Date() }
         });
 
         if (!created) {
