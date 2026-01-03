@@ -7,6 +7,7 @@ import sequelize from './config/database';
 
 import authRoutes from './routes/auth.routes';
 import courseRoutes from './routes/course.routes';
+import lessonRoutes from './routes/lesson.routes';
 
 dotenv.config();
 
@@ -19,7 +20,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
-
+app.use('/api', lessonRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'LMS API is running' });
