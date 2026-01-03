@@ -1,13 +1,24 @@
 import { Router } from 'express';
-// import { } from '../controllers/course.controller';
+import {
+    getPublicCourses,
+    getEnrolledCourses,
+    getInstructorCourses,
+    createCourse,
+    enrollCourse
+} from '../controllers/course.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Public courses list
-router.get('/', (req, res) => { res.json({ message: 'List courses' }) });
+// Public
+router.get('/', getPublicCourses);
 
-// Instructor only
-router.post('/', authenticateToken, authorizeRoles('instructor'), (req, res) => { res.json({ message: 'Create course' }) });
+// Student
+router.get('/enrolled', authenticateToken, getEnrolledCourses);
+router.post('/:courseId/enroll', authenticateToken, enrollCourse);
+
+// Instructor
+router.get('/managed', authenticateToken, authorizeRoles('instructor'), getInstructorCourses);
+router.post('/', authenticateToken, authorizeRoles('instructor'), createCourse);
 
 export default router;

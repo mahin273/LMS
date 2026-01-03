@@ -64,3 +64,13 @@ export const login = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+export const getMe = async (req: Request, res: Response) => {
+    // req.user is set by authenticateToken middleware
+    const user = (req as any).user;
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    res.json({
+        user: { id: user.id, name: user.name, email: user.email, role: user.role }
+    });
+};

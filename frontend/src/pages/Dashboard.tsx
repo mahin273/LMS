@@ -1,22 +1,29 @@
 import { useNavigate } from 'react-router-dom';
-import { removeToken } from '@/lib/auth';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import StudentDashboard from './StudentDashboard';
+import InstructorDashboard from './InstructorDashboard';
 
 export default function Dashboard() {
-    const navigate = useNavigate();
+    const { user, logout, loading } = useAuth();
 
-    const handleLogout = () => {
-        removeToken();
-        navigate('/login');
-    };
+    if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="p-8">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <Button variant="outline" onClick={handleLogout}>Logout</Button>
-            </div>
-            <p>Welcome to your LMS Dashboard.</p>
+        <div className="min-h-screen bg-background">
+            <header className="border-b">
+                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-xl font-bold">LMS</h1>
+                        <span className="text-sm text-muted-foreground ml-2">Hello, {user?.name}</span>
+                    </div>
+                    <Button variant="ghost" onClick={logout}>Logout</Button>
+                </div>
+            </header>
+
+            <main className="container mx-auto px-4 py-8">
+                {user?.role === 'instructor' ? <InstructorDashboard /> : <StudentDashboard />}
+            </main>
         </div>
     );
 }
