@@ -4,6 +4,9 @@ import { AuthProvider } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import Dashboard from './pages/Dashboard'
+import CreateCoursePage from './pages/CreateCoursePage'
+import EditCoursePage from './pages/EditCoursePage'
+import CoursePlayerPage from './pages/CoursePlayerPage'
 import { isAuthenticated } from './lib/auth'
 
 const queryClient = new QueryClient()
@@ -27,6 +30,28 @@ function App() {
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/courses/new" element={
+              <ProtectedRoute>
+                <CreateCoursePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/courses/:courseId/edit" element={
+              <ProtectedRoute>
+                <EditCoursePage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/courses/:courseId" element={
+              <ProtectedRoute>
+                <CoursePlayerPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/courses/:courseId/lessons/:lessonId" element={
+              <ProtectedRoute>
+                <CoursePlayerPage />
               </ProtectedRoute>
             } />
 
