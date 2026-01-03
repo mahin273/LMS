@@ -9,6 +9,11 @@ import EditCoursePage from './pages/EditCoursePage'
 import CoursePlayerPage from './pages/CoursePlayerPage'
 import CoursesPage from './pages/CoursesPage'
 import LandingPage from './pages/LandingPage'
+import AdminStudentsPage from './pages/AdminStudentsPage'
+import AdminInstructorsPage from './pages/AdminInstructorsPage'
+import AdminCoursesPage from './pages/AdminCoursesPage'
+import SystemLogsPage from './pages/SystemLogsPage'
+import DatabaseSettingsPage from './pages/DatabaseSettingsPage'
 import { isAuthenticated } from './lib/auth'
 
 const queryClient = new QueryClient()
@@ -62,6 +67,32 @@ function App() {
             <Route path="/courses/:courseId/lessons/:lessonId" element={
               <ProtectedRoute>
                 <CoursePlayerPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/students" element={
+              <ProtectedRoute>
+                <AdminStudentsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/instructors" element={
+              <ProtectedRoute>
+                <AdminInstructorsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/courses" element={
+              <ProtectedRoute>
+                <AdminCoursesPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/logs" element={
+              <ProtectedRoute>
+                <SystemLogsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/settings" element={
+              <ProtectedRoute>
+                <DatabaseSettingsPage />
               </ProtectedRoute>
             } />
 

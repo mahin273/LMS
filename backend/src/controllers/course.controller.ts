@@ -115,3 +115,25 @@ export const enrollCourse = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ error: 'Enrollment failed' });
     }
 }
+
+export const deleteCourse = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const user = req.user;
+
+    try {
+        const course = await Course.findByPk(id);
+        if (!course) {
+            return res.status(404).json({ error: 'Course not found' });
+        }
+
+        // Allow Admin or the Instructor who owns it
+        if (user?.role !== 'admin' && course.instructorId !== user?.id) {
+            return res.status(403).json({ error: 'Not authorized to delete this course' });
+        }
+
+        await course.destroy();
+        res.status(204).send();
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete course' });
+    }
+};
