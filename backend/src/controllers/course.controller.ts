@@ -9,11 +9,42 @@ export const getPublicCourses = async (req: Request, res: Response) => {
     try {
         const courses = await Course.findAll({
             include: [
-                { model: User, as: 'instructor', attributes: ['name'] }
+                { model: User, as: 'instructor', attributes: ['name'] },
+                {
+                    model: User,
+                    as: 'students',
+                    attributes: ['id'], // We just need IDs to count or use Sequelize.fn
+                    through: { attributes: ['rating'] }
+                }
             ]
         });
-        res.json(courses);
+
+        // Calculate stats manually for now to avoid Group By complexify
+        const coursesWithStats = courses.map((course: any) => {
+            const enrollments = course.students || [];
+            const count = enrollments.length;
+
+            // Filter out null ratings
+            const ratings = enrollments
+                .map((s: any) => s.Enrollment?.rating)
+                .filter((r: any) => r);
+
+            const avg = ratings.length > 0
+                ? (ratings.reduce((a: any, b: any) => a + b, 0) / ratings.length).toFixed(1)
+                : null;
+
+            return {
+                ...course.toJSON(),
+                studentCount: count,
+                averageRating: avg ? parseFloat(avg) : null,
+                // Clean up students array to not expose all IDs publicly if unwanted
+                students: undefined
+            };
+        });
+
+        res.json(coursesWithStats);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch courses' });
     }
 };
@@ -113,6 +144,52 @@ export const enrollCourse = async (req: AuthRequest, res: Response) => {
         res.json(enrollment);
     } catch (error) {
         res.status(500).json({ error: 'Enrollment failed' });
+    }
+}
+
+export const unenrollCourse = async (req: AuthRequest, res: Response) => {
+    const studentId = req.user?.id;
+    const { courseId } = req.params;
+    try {
+        const deleted = await Enrollment.destroy({
+            where: { studentId, courseId }
+        });
+
+        if (deleted) {
+            res.json({ message: 'Unenrolled successfully' });
+        } else {
+            res.status(404).json({ error: 'Enrollment not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Unenrollment failed' });
+    }
+}
+
+export const rateCourse = async (req: AuthRequest, res: Response) => {
+    const studentId = req.user?.id;
+    const { courseId } = req.params;
+    const { rating, review } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    try {
+        const enrollment = await Enrollment.findOne({
+            where: { studentId, courseId }
+        });
+
+        if (!enrollment) {
+            return res.status(404).json({ error: 'You are not enrolled in this course' });
+        }
+
+        enrollment.rating = rating;
+        enrollment.review = review;
+        await enrollment.save();
+
+        res.json({ message: 'Rating submitted successfully', enrollment });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to submit rating' });
     }
 }
 

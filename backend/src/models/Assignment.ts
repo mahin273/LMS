@@ -7,6 +7,7 @@ interface AssignmentAttributes {
     title: string;
     description: string;
     dueDate?: Date;
+    lessonId?: string;
 }
 
 interface AssignmentCreationAttributes extends Optional<AssignmentAttributes, 'id'> { }
@@ -17,6 +18,7 @@ class Assignment extends Model<AssignmentAttributes, AssignmentCreationAttribute
     public title!: string;
     public description!: string;
     public dueDate?: Date;
+    public lessonId?: string;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -45,6 +47,10 @@ Assignment.init(
             type: DataTypes.DATE,
             allowNull: true,
         },
+        lessonId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        }
     },
     {
         sequelize,

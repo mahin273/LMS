@@ -12,7 +12,9 @@ interface Course {
     // Student props
     Enrollment?: { status: string; joinedAt: string };
     badges?: { type: string }[];
-    progress?: number;
+    // Stats
+    studentCount?: number;
+    averageRating?: number;
 }
 
 interface CourseCardProps {
@@ -24,10 +26,26 @@ export function CourseCard({ course, isEnrolled }: CourseCardProps) {
     const navigate = useNavigate();
 
     return (
-        <Card className="flex flex-col h-full hover:shadow-md transition-shadow">
+        <Card className="flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/courses/${course.id}`)}>
             <CardHeader>
-                <CardTitle>{course.title}</CardTitle>
-                <CardDescription>By {course.instructor.name}</CardDescription>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="line-clamp-1">{course.title}</CardTitle>
+                    {course.averageRating && (
+                        <div className="flex items-center gap-1 text-sm font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            <span>⭐</span>
+                            <span>{course.averageRating}</span>
+                        </div>
+                    )}
+                </div>
+                <div className="flex justify-between items-center text-sm text-muted-foreground mt-1">
+                    <CardDescription>By {course.instructor.name}</CardDescription>
+                    {course.studentCount !== undefined && (
+                        <div className="flex items-center gap-1 text-xs" title={`${course.studentCount} students enrolled`}>
+                            <span>👥</span>
+                            <span>{course.studentCount}</span>
+                        </div>
+                    )}
+                </div>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-3">

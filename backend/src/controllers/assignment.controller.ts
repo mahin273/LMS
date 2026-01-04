@@ -14,13 +14,14 @@ export const getAssignments = async (req: Request, res: Response) => {
 
 export const createAssignment = async (req: Request, res: Response) => {
     const { courseId } = req.params;
-    const { title, description, dueDate } = req.body;
+    const { title, description, dueDate, lessonId } = req.body;
     try {
         const assignment = await Assignment.create({
             courseId,
             title,
             description,
-            dueDate
+            dueDate,
+            lessonId
         });
         res.status(201).json(assignment);
     } catch (error) {
@@ -73,5 +74,33 @@ export const gradeSubmission = async (req: Request, res: Response) => {
         res.json(submission);
     } catch (error) {
         res.status(500).json({ error: 'Failed to grade submission' });
+    }
+};
+
+export const submitAssignment = async (req: Request, res: Response) => {
+    const { id } = req.params; // Assignment ID
+    const { fileUrl } = req.body;
+    // @ts-ignore
+    const studentId = req.user.id;
+
+    try {
+        const submission = await Submission.create({
+            assignmentId: id,
+            studentId,
+            fileUrl,
+            submittedAt: new Date()
+        });
+        res.status(201).json(submission);
+    } catch (error) {
+        // If already submitted, maybe update it? For now let's just create new or error if unique constraint exists.
+        // Actually, let's findOne and update or create.
+        const existing = await Submission.findOne({ where: { assignmentId: id, studentId } });
+        if (existing) {
+            existing.fileUrl = fileUrl;
+            existing.submittedAt = new Date();
+            await existing.save();
+            return res.json(existing);
+        }
+        res.status(500).json({ error: 'Failed to submit assignment' });
     }
 };

@@ -15,6 +15,8 @@ export default function Layout() {
                         </Link>
                         <nav className="hidden md:flex gap-4 text-sm font-medium">
                             <Link to="/dashboard" className="hover:text-primary">Dashboard</Link>
+                            <Link to="/courses" className="hover:text-primary">Courses</Link>
+                            <Link to="/leaderboard" className="hover:text-primary">Leaderboard</Link>
                             {/* Add more global links here if needed */}
                         </nav>
                     </div>

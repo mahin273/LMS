@@ -7,10 +7,11 @@ interface LessonAttributes {
     title: string;
     content: string; // Markdown or text content
     fileUrl?: string;
+    videoUrl?: string;
     orderIndex: number;
 }
 
-interface LessonCreationAttributes extends Optional<LessonAttributes, 'id' | 'fileUrl'> { }
+interface LessonCreationAttributes extends Optional<LessonAttributes, 'id' | 'fileUrl' | 'videoUrl'> { }
 
 class Lesson extends Model<LessonAttributes, LessonCreationAttributes> implements LessonAttributes {
     public id!: string;
@@ -18,6 +19,7 @@ class Lesson extends Model<LessonAttributes, LessonCreationAttributes> implement
     public title!: string;
     public content!: string;
     public fileUrl?: string;
+    public videoUrl?: string;
     public orderIndex!: number;
 
     public readonly createdAt!: Date;
@@ -44,6 +46,10 @@ Lesson.init(
             allowNull: false,
         },
         fileUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        videoUrl: {
             type: DataTypes.STRING,
             allowNull: true,
         },

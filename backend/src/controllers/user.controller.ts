@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { User } from '../models';
+import { User, Badge } from '../models';
 
 export const getAllUsers = async (req: Request, res: Response) => {
     const { role } = req.query;
@@ -40,11 +40,15 @@ export const getProfile = async (req: Request, res: Response) => {
     const userId = req.user?.id;
     try {
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'name', 'email', 'role', 'createdAt']
+            attributes: ['id', 'name', 'email', 'role', 'createdAt'],
+            include: [
+                { model: Badge, as: 'badges', required: false }
+            ]
         });
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Failed to fetch profile' });
     }
 };

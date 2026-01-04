@@ -11,6 +11,7 @@ import lessonRoutes from './routes/lesson.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
 import uploadRoutes from './routes/upload.routes';
+import gamificationRoutes from './routes/gamification.routes';
 import { courseAssignmentRoutes, assignmentRoutes } from './routes/assignment.routes';
 import path from 'path';
 
@@ -32,12 +33,13 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
-app.use('/api/courses', lessonRoutes); // Mounts /:courseId/lessons
-app.use('/api', lessonRoutes); // Mounts /lessons/:lessonId
+// app.use('/api/courses', lessonRoutes); // Removed: moved to courseRoutes
+app.use('/api/lessons', lessonRoutes); // Mounts /:lessonId and /:lessonId/complete
 app.use('/api/courses', courseAssignmentRoutes); // Mounts /:courseId/assignments
 app.use('/api/assignments', assignmentRoutes); // Mounts /:id (delete)
 app.use('/api/admin', adminRoutes);
 app.use('/api', uploadRoutes);
+app.use('/api/gamification', gamificationRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'LMS API is running' });

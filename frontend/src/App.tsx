@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
@@ -18,6 +18,37 @@ import ProfilePage from './pages/ProfilePage'
 import { isAuthenticated } from './lib/auth'
 import Layout from './components/Layout'
 import RoleRoute from './components/RoleRoute'
+import LeaderboardPage from './pages/LeaderboardPage'
+import CourseDetailsPage from './pages/CourseDetailsPage'
+import client from '@/api/client'; // Need this for the wrapper logic
+
+// Wrapper to check enrollment
+function CourseAccessGuard() {
+  const { courseId } = useParams();
+
+  // We need to know if the user is enrolled.
+  // We can check the "enrolled-courses" list.
+  const { data: enrolledCourses, isLoading } = useQuery({
+    queryKey: ['enrolled-courses'],
+    queryFn: async () => {
+      const res = await client.get('/courses/enrolled');
+      return res.data;
+    },
+    retry: false
+  });
+
+  if (isLoading) return <div>Loading access rights...</div>;
+
+  // Check if courseId is in enrolledCourses
+  const isEnrolled = enrolledCourses?.some((c: any) => c.id === courseId);
+
+  if (isEnrolled) {
+    return <CoursePlayerPage />;
+  } else {
+    return <CourseDetailsPage />;
+  }
+}
+
 
 const queryClient = new QueryClient()
 
@@ -43,6 +74,7 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
 
               <Route path="/courses" element={<CoursesPage />} />
               <Route path="/courses/new" element={<CreateCoursePage />} />
@@ -53,7 +85,11 @@ function App() {
                 </RoleRoute>
               } />
 
-              <Route path="/courses/:courseId" element={<CoursePlayerPage />} />
+              <Route path="/courses/:courseId" element={
+                <RoleRoute requiredRole="student">
+                  <CourseAccessGuard />
+                </RoleRoute>
+              } />
               <Route path="/courses/:courseId/lessons/:lessonId" element={<CoursePlayerPage />} />
 
               {/* Admin Routes */}

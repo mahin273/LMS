@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { useNavigate, Link } from 'react-router-dom'
 import client from '@/api/client'
 import { setToken } from '@/lib/auth'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +23,7 @@ type FormData = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
     const navigate = useNavigate()
+    const { refetchUser } = useAuth()
     const [error, setError] = useState('')
     const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(registerSchema),
@@ -38,6 +40,7 @@ export default function RegisterPage() {
             setError('')
             const res = await client.post('/auth/register', data)
             setToken(res.data.token)
+            await refetchUser() // Update global auth state
             navigate('/dashboard')
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed')

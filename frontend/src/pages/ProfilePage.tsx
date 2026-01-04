@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { BadgeDisplay } from "@/components/BadgeDisplay";
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -80,6 +81,36 @@ export default function ProfilePage() {
                     <CardDescription>Manage your account settings and preferences.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {user?.role === 'student' && (
+                        <div className="mb-8 p-4 bg-muted/30 rounded-lg border">
+                            <h3 className="text-lg font-semibold mb-4">Earned Badges</h3>
+                            {/* We expect badges to be in the profile response now */}
+                            {/* But react-query cache might need invalidation or we assume 'profile' key includes it */}
+
+                            {/* Wait, the current 'user' from context might not have badges. 
+                                The useQuery in this component fetches '/users/profile' which NOW includes badges.
+                                Let's use the data from useQuery if available.
+                            */}
+
+                            {/* Actually, let's access the query data directly */}
+                            <div className="flex gap-4 flex-wrap">
+                                {/* @ts-ignore */}
+                                {queryClient.getQueryData(['profile'])?.badges?.length > 0 ? (
+                                    // @ts-ignore
+                                    Object.values(queryClient.getQueryData(['profile'])?.badges.reduce((acc: any, badge: any) => {
+                                        acc[badge.type] = acc[badge.type] || { ...badge, count: 0 };
+                                        acc[badge.type].count += 1;
+                                        return acc;
+                                    }, {})).map((badge: any) => (
+                                        <BadgeDisplay key={badge.id} type={badge.type} count={badge.count} className="w-24" showName={false} />
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">Complete lessons to earn badges!</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>

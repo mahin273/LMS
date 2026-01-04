@@ -6,6 +6,8 @@ interface EnrollmentAttributes {
     courseId: string;
     status: 'active' | 'completed' | 'dropped';
     joinedAt: Date;
+    rating?: number;
+    review?: string;
 }
 
 class Enrollment extends Model<EnrollmentAttributes> implements EnrollmentAttributes {
@@ -13,6 +15,8 @@ class Enrollment extends Model<EnrollmentAttributes> implements EnrollmentAttrib
     public courseId!: string;
     public status!: 'active' | 'completed' | 'dropped';
     public joinedAt!: Date;
+    public rating?: number;
+    public review?: string;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -36,6 +40,15 @@ Enrollment.init(
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
         },
+        rating: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            validate: { min: 1, max: 5 }
+        },
+        review: {
+            type: DataTypes.TEXT,
+            allowNull: true
+        }
     },
     {
         sequelize,

@@ -30,7 +30,7 @@ export default function EditCoursePage() {
     const { data: lessons, isLoading: isLoadingLessons } = useQuery({
         queryKey: ['lessons', courseId],
         queryFn: async () => {
-            const res = await client.get(`/${courseId}/lessons`);
+            const res = await client.get(`/courses/${courseId}/lessons`);
             return res.data;
         }
     });
@@ -82,7 +82,7 @@ export default function EditCoursePage() {
 
     const createLessonMutation = useMutation({
         mutationFn: async (data: any) => {
-            return client.post(`/${courseId}/lessons`, data);
+            return client.post(`/courses/${courseId}/lessons`, data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['lessons', courseId] });
@@ -116,13 +116,63 @@ export default function EditCoursePage() {
         }
     };
 
+    const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+
+    const updateLessonMutation = useMutation({
+        mutationFn: async (data: any) => {
+            return client.put(`/lessons/${editingLessonId}`, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['lessons', courseId] });
+            setIsAddingLesson(false);
+            setEditingLessonId(null);
+            setFileUrl(null);
+            reset();
+            toast.success("Lesson updated");
+        }
+    });
+
     const onAddLesson = (data: any) => {
-        createLessonMutation.mutate({
+        // Extract URL from iframe if present
+        let cleanVideoUrl = data.videoUrl;
+        if (cleanVideoUrl && cleanVideoUrl.includes('<iframe')) {
+            const srcMatch = cleanVideoUrl.match(/src=["'](.*?)["']/);
+            if (srcMatch && srcMatch[1]) {
+                cleanVideoUrl = srcMatch[1];
+            }
+        }
+
+        const lessonData = {
             ...data,
-            orderIndex: lessons ? lessons.length + 1 : 1,
-            fileUrl
-        });
+            videoUrl: cleanVideoUrl,
+            fileUrl: fileUrl || undefined
+        };
+
+        if (editingLessonId) {
+            updateLessonMutation.mutate(lessonData);
+        } else {
+            createLessonMutation.mutate({
+                ...lessonData,
+                orderIndex: lessons ? lessons.length + 1 : 1,
+            });
+        }
     };
+
+    const handleEditLesson = (lesson: any) => {
+        setEditingLessonId(lesson.id);
+        setIsAddingLesson(true);
+        setFileUrl(lesson.fileUrl);
+        // Timeout to allow form to mount if conditional rendering is instant
+        setTimeout(() => {
+            reset({
+                title: lesson.title,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl
+            });
+        }, 0);
+    };
+
+    if (isLoadingCourse || isLoadingLessons) return <div>Loading...</div>;
 
     const onUpdateCourse = (data: any) => {
         updateCourseMutation.mutate(data);
@@ -162,7 +212,7 @@ export default function EditCoursePage() {
                                                 {lesson.fileUrl && <Badge variant="secondary" className="text-xs">With Attachment</Badge>}
                                             </div>
                                             <div className="flex gap-1">
-                                                <Button variant="ghost" size="sm">Edit</Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleEditLesson(lesson)}>Edit</Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
@@ -187,10 +237,13 @@ export default function EditCoursePage() {
                             )}
 
                             {!isAddingLesson ? (
-                                <Button onClick={() => setIsAddingLesson(true)} variant="outline" className="w-full mt-4">+ Add Lesson</Button>
+                                <Button onClick={() => { setIsAddingLesson(true); setEditingLessonId(null); reset({ title: '', content: '', videoUrl: '' }); setFileUrl(null); }} variant="outline" className="w-full mt-4">+ Add Lesson</Button>
                             ) : (
                                 <div className="mt-4 p-4 border rounded-md bg-muted/20">
                                     <form onSubmit={handleSubmit(onAddLesson)} className="space-y-4">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <h3 className="font-semibold">{editingLessonId ? 'Edit Lesson' : 'New Lesson'}</h3>
+                                        </div>
                                         <div className="space-y-2">
                                             <Label>Lesson Title</Label>
                                             <Input {...register('title', { required: true })} placeholder="e.g., Setting up the environment" />
@@ -204,17 +257,22 @@ export default function EditCoursePage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
+                                            <Label>Video URL (YouTube Embed Link)</Label>
+                                            <Input {...register('videoUrl')} placeholder="https://www.youtube.com/embed/..." />
+                                        </div>
+                                        <div className="space-y-2">
                                             <Label>Lesson Material (Optional)</Label>
                                             <Input type="file" onChange={handleFileUpload} disabled={uploading} />
                                             {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
                                             {fileUrl && <p className="text-xs text-green-600">File attached!</p>}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button type="submit" disabled={createLessonMutation.isPending || uploading}>
-                                                {createLessonMutation.isPending ? 'Saving...' : 'Save Lesson'}
+                                            <Button type="submit" disabled={createLessonMutation.isPending || updateLessonMutation.isPending || uploading}>
+                                                {createLessonMutation.isPending || updateLessonMutation.isPending ? 'Saving...' : 'Save Lesson'}
                                             </Button>
-                                            <Button type="button" variant="ghost" onClick={() => { setIsAddingLesson(false); setFileUrl(null); }}>Cancel</Button>
+                                            <Button type="button" variant="ghost" onClick={() => { setIsAddingLesson(false); setEditingLessonId(null); setFileUrl(null); }}>Cancel</Button>
                                         </div>
+
                                     </form>
                                 </div>
                             )}
@@ -273,14 +331,14 @@ export default function EditCoursePage() {
                 </TabsContent>
 
                 <TabsContent value="assignments">
-                    <AssignmentsTab courseId={courseId!} />
+                    <AssignmentsTab courseId={courseId!} lessons={lessons || []} />
                 </TabsContent>
 
                 <TabsContent value="analytics">
                     <AnalyticsTab courseId={courseId!} />
                 </TabsContent>
-            </Tabs>
-        </div>
+            </Tabs >
+        </div >
     );
 }
 
@@ -337,7 +395,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 
-function AssignmentsTab({ courseId }: { courseId: string }) {
+function AssignmentsTab({ courseId, lessons }: { courseId: string, lessons: any[] }) {
     const queryClient = useQueryClient();
     const { register, handleSubmit, reset } = useForm();
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
@@ -432,6 +490,18 @@ function AssignmentsTab({ courseId }: { courseId: string }) {
                                 <Label>Due Date</Label>
                                 <Input type="date" {...register('dueDate')} />
                             </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Associated Lesson (Optional)</Label>
+                            <select
+                                {...register('lessonId')}
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <option value="">No specific lesson</option>
+                                {lessons?.map((l: any) => (
+                                    <option key={l.id} value={l.id}>{l.title}</option>
+                                ))}
+                            </select>
                         </div>
                         <div className="space-y-2">
                             <Label>Description</Label>
