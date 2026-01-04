@@ -16,18 +16,28 @@ export const register = async (req: Request, res: Response) => {
 
         const passwordHash = await bcrypt.hash(validatedData.password, 10);
 
+        const status = validatedData.role === 'instructor' ? 'pending' : 'active';
+
         const user = await User.create({
             email: validatedData.email,
             name: validatedData.name,
             password_hash: passwordHash,
             role: validatedData.role as any || 'student',
+            status
         });
+
+        if (status === 'pending') {
+            return res.status(201).json({
+                message: 'Registration successful. Your account is pending approval by an administrator.',
+                user: { id: user.id, name: user.name, email: user.email, role: user.role, status }
+            });
+        }
 
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '15m' });
         const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '7d' });
 
         res.status(201).json({
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+            user: { id: user.id, name: user.name, email: user.email, role: user.role, status },
             token,
             refreshToken
         });
@@ -51,11 +61,18 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
+        if (user.status === 'pending') {
+            return res.status(403).json({ error: 'Your account is pending approval.' });
+        }
+        if (user.status === 'rejected') {
+            return res.status(403).json({ error: 'Your account has been rejected.' });
+        }
+
         const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '15m' });
         const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_SECRET as string, { expiresIn: '7d' });
 
         res.json({
-            user: { id: user.id, name: user.name, email: user.email, role: user.role },
+            user: { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status },
             token,
             refreshToken
         });

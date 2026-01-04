@@ -6,6 +6,7 @@ interface CourseAttributes {
     title: string;
     description: string;
     instructorId: string;
+    status: 'draft' | 'pending' | 'published' | 'rejected';
 }
 
 interface CourseCreationAttributes extends Optional<CourseAttributes, 'id'> { }
@@ -15,6 +16,7 @@ class Course extends Model<CourseAttributes, CourseCreationAttributes> implement
     public title!: string;
     public description!: string;
     public instructorId!: string;
+    public status!: 'draft' | 'pending' | 'published' | 'rejected';
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -41,6 +43,11 @@ Course.init(
         instructorId: {
             type: DataTypes.UUID,
             allowNull: false,
+        },
+        status: {
+            type: DataTypes.ENUM('draft', 'pending', 'published', 'rejected'),
+            allowNull: false,
+            defaultValue: 'draft',
         },
     },
     {

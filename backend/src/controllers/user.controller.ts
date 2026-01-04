@@ -19,7 +19,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
         const users = await User.findAll({
             where: whereClause,
-            attributes: ['id', 'name', 'email', 'role', 'createdAt']
+            attributes: ['id', 'name', 'email', 'role', 'status', 'createdAt']
         });
         res.json(users);
     } catch (error) {
@@ -84,5 +84,22 @@ export const updateProfile = async (req: Request, res: Response) => {
         res.json({ message: 'Profile updated successfully', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update profile' });
+    }
+};
+
+export const updateUserStatus = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body; // 'active' | 'rejected' | 'pending'
+
+    try {
+        const user = await User.findByPk(id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        user.status = status;
+        await user.save();
+
+        res.json({ message: `User status updated to ${status}`, user });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update user status' });
     }
 };

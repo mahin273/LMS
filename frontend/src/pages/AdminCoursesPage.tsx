@@ -1,41 +1,69 @@
-
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/api/client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Link } from 'react-router-dom';
 
 interface Course {
     id: string;
     title: string;
     description: string;
+    status: 'draft' | 'pending' | 'published' | 'rejected';
     instructor: {
         name: string;
+        email: string;
     };
+    students: any[];
     createdAt: string;
 }
 
 export default function AdminCoursesPage() {
     const queryClient = useQueryClient();
 
+    const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search, 500);
+
+    // We used getAllCoursesAdmin endpoint
     const { data: courses, isLoading } = useQuery({
-        queryKey: ['allCourses'], // Using a different key than public courses
+        queryKey: ['admin-courses', debouncedSearch],
         queryFn: async () => {
-            // Admin sees same list as public for now, but with delete powers
-            // Ideally fetching ALL courses including drafts if implemented
-            const res = await client.get('/courses');
+            const res = await client.get('/courses/admin/all');
             return res.data;
         }
     });
 
-    const deleteMutation = useMutation({
-        mutationFn: async (courseId: string) => {
-            await client.delete(`/courses/${courseId}`);
+    // Filter client-side for search for now, or implement backend search later
+    const filteredCourses = courses?.filter((c: Course) =>
+        c.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        c.instructor.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }: { id: string, status: string }) => {
+            await client.put(`/courses/${id}/status`, { status });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['allCourses'] });
-            toast.success("Course deleted successfully");
+            queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+            toast.success("Course status updated");
+        },
+        onError: () => {
+            toast.error("Failed to update status");
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await client.delete(`/courses/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+            toast.success("Course deleted");
         },
         onError: () => {
             toast.error("Failed to delete course");
@@ -46,7 +74,15 @@ export default function AdminCoursesPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Manage Courses</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">Manage Courses</h1>
+                <Input
+                    placeholder="Search courses or instructors..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="max-w-sm"
+                />
+            </div>
 
             <div className="rounded-md border">
                 <Table>
@@ -54,17 +90,61 @@ export default function AdminCoursesPage() {
                         <TableRow>
                             <TableHead>Title</TableHead>
                             <TableHead>Instructor</TableHead>
-                            <TableHead>Created At</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Students</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {courses?.map((course: Course) => (
+                        {filteredCourses?.map((course: Course) => (
                             <TableRow key={course.id}>
-                                <TableCell className="font-medium">{course.title}</TableCell>
-                                <TableCell>{course.instructor?.name || 'Unknown'}</TableCell>
-                                <TableCell>{new Date(course.createdAt).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="font-medium">
+                                    <div className="flex flex-col">
+                                        <span>{course.title}</span>
+                                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">{course.description}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span>{course.instructor.name}</span>
+                                        <span className="text-xs text-muted-foreground">{course.instructor.email}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant={
+                                        course.status === 'published' ? 'default' :
+                                            course.status === 'pending' ? 'secondary' :
+                                                course.status === 'rejected' ? 'destructive' : 'outline'
+                                    }>
+                                        {course.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>{course.students?.length || 0}</TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    <Button variant="ghost" size="icon" asChild>
+                                        <Link to={`/course/${course.id}`} target="_blank">
+                                            <ExternalLink className="h-4 w-4" />
+                                        </Link>
+                                    </Button>
+                                    {course.status === 'pending' && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                className="bg-green-600 hover:bg-green-700"
+                                                onClick={() => updateStatusMutation.mutate({ id: course.id, status: 'published' })}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-destructive border-destructive hover:bg-destructive/10"
+                                                onClick={() => updateStatusMutation.mutate({ id: course.id, status: 'rejected' })}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </>
+                                    )}
                                     <Button
                                         variant="ghost"
                                         size="icon"

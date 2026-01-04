@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { Badge } from '@/components/ui/badge';
+
 interface User {
     id: string;
     name: string;
     email: string;
     role: string;
+    status?: 'active' | 'pending' | 'rejected';
     createdAt: string;
 }
 
@@ -27,6 +30,19 @@ export default function AdminInstructorsPage() {
         queryFn: async () => {
             const res = await client.get(`/users?role=instructor&search=${debouncedSearch}`);
             return res.data;
+        }
+    });
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ userId, status }: { userId: string, status: string }) => {
+            await client.put(`/users/${userId}/status`, { status });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            toast.success("Instructor status updated");
+        },
+        onError: () => {
+            toast.error("Failed to update status");
         }
     });
 
@@ -63,6 +79,7 @@ export default function AdminInstructorsPage() {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
+                            <TableHead>Status</TableHead>
                             <TableHead>Joined</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -72,8 +89,31 @@ export default function AdminInstructorsPage() {
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
+                                <TableCell>
+                                    <Badge variant={user.status === 'active' ? 'default' : user.status === 'pending' ? 'secondary' : 'destructive'}>
+                                        {user.status || 'active'}
+                                    </Badge>
+                                </TableCell>
                                 <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right space-x-2">
+                                    {user.status === 'pending' && (
+                                        <>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'active' })}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-destructive"
+                                                onClick={() => updateStatusMutation.mutate({ userId: user.id, status: 'rejected' })}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </>
+                                    )}
                                     <Button
                                         variant="ghost"
                                         size="icon"

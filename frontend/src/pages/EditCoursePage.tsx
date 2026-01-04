@@ -174,17 +174,45 @@ export default function EditCoursePage() {
 
     if (isLoadingCourse || isLoadingLessons) return <div>Loading...</div>;
 
-    const onUpdateCourse = (data: any) => {
-        updateCourseMutation.mutate(data);
-    };
+    const submitCourseMutation = useMutation({
+        mutationFn: async () => {
+            return client.post(`/courses/${courseId}/submit`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['course', courseId] });
+            toast.success("Course submitted for review");
+        },
+        onError: () => {
+            toast.error("Failed to submit course");
+        }
+    });
 
     if (isLoadingCourse || isLoadingLessons) return <div>Loading...</div>;
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-4xl">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Edit Course: {course?.title}</h1>
-                <Button onClick={() => navigate('/dashboard')} variant="outline">Back to Dashboard</Button>
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold">Edit Course: {course?.title}</h1>
+                    <Badge variant={course?.status === 'published' ? 'default' : course?.status === 'pending' ? 'secondary' : 'outline'}>
+                        {course?.status || 'draft'}
+                    </Badge>
+                </div>
+                <div className="flex gap-2">
+                    {course?.status === 'draft' && (
+                        <Button
+                            onClick={() => {
+                                if (confirm("Submit this course for admin approval? You won't be able to edit it while pending.")) {
+                                    submitCourseMutation.mutate();
+                                }
+                            }}
+                            disabled={submitCourseMutation.isPending}
+                        >
+                            {submitCourseMutation.isPending ? 'Submitting...' : 'Submit for Review'}
+                        </Button>
+                    )}
+                    <Button onClick={() => navigate('/dashboard')} variant="outline">Back to Dashboard</Button>
+                </div>
             </div>
 
             <Tabs defaultValue="lessons" className="w-full">
@@ -300,6 +328,31 @@ export default function EditCoursePage() {
                                     {updateCourseMutation.isPending ? 'Saving...' : 'Update Course'}
                                 </Button>
                             </form>
+                            <div className="mt-8 pt-6 border-t">
+                                <h3 className="text-lg font-medium text-destructive mb-2">Danger Zone</h3>
+                                <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-md bg-destructive/5">
+                                    <div>
+                                        <p className="font-medium text-destructive">Delete this course</p>
+                                        <p className="text-sm text-muted-foreground">Once deleted, it will be gone forever. Please be certain.</p>
+                                    </div>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => {
+                                            const confirmText = prompt("Type 'DELETE' to confirm course deletion:");
+                                            if (confirmText === 'DELETE') {
+                                                client.delete(`/courses/${courseId}`)
+                                                    .then(() => {
+                                                        toast.success("Course deleted");
+                                                        navigate('/dashboard');
+                                                    })
+                                                    .catch(() => toast.error("Failed to delete course"));
+                                            }
+                                        }}
+                                    >
+                                        Delete Course
+                                    </Button>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

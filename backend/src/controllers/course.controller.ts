@@ -8,6 +8,7 @@ interface AuthRequest extends Request {
 export const getPublicCourses = async (req: Request, res: Response) => {
     try {
         const courses = await Course.findAll({
+            where: { status: 'published' },
             include: [
                 { model: User, as: 'instructor', attributes: ['name'] },
                 {
@@ -114,6 +115,20 @@ export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
     }
 };
 
+export const getAllCoursesAdmin = async (req: Request, res: Response) => {
+    try {
+        const courses = await Course.findAll({
+            include: [
+                { model: User, as: 'instructor', attributes: ['name', 'email'] },
+                { model: User, as: 'students', attributes: ['id'] }
+            ]
+        });
+        res.json(courses);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch all courses' });
+    }
+};
+
 export const createCourse = async (req: AuthRequest, res: Response) => {
     const instructorId = req.user?.id;
     const { title, description } = req.body;
@@ -121,7 +136,8 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         const course = await Course.create({
             instructorId: instructorId!,
             title,
-            description
+            description,
+            status: 'draft'
         });
         res.status(201).json(course);
     } catch (error) {
@@ -275,5 +291,47 @@ export const getCourseAnalytics = async (req: AuthRequest, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+};
+
+export const updateCourseStatus = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body; // 'published' | 'rejected'
+
+    if (!['published', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    try {
+        const course = await Course.findByPk(id);
+        if (!course) return res.status(404).json({ error: 'Course not found' });
+
+        course.status = status;
+        await course.save();
+
+        res.json({ message: `Course ${status}`, course });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update course status' });
+    }
+};
+
+export const submitCourse = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const instructorId = req.user?.id;
+
+    try {
+        const course = await Course.findByPk(id);
+        if (!course) return res.status(404).json({ error: 'Course not found' });
+
+        if (course.instructorId !== instructorId) {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        course.status = 'pending';
+        await course.save();
+
+        res.json({ message: 'Course submitted for approval', course });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to submit course' });
     }
 };

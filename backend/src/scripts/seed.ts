@@ -39,156 +39,131 @@ async function seed() {
         await sequelize.authenticate();
         console.log('Database connected.');
 
-        // Optional: Sync to ensure tables exist (use with caution in prod)
-        // await sequelize.sync({ force: true }); // UNCOMMENT only if you want a clean slate
+        // await sequelize.sync({ force: true }); 
 
         const passwordHash = await bcrypt.hash('password123', 10);
 
         // 1. Admin
-        const adminEmail = 'md.mahin.bd18@gmail.com';
-        const [admin] = await User.findOrCreate({
-            where: { email: adminEmail },
+        await User.findOrCreate({
+            where: { email: 'admin@lms.com' },
             defaults: {
-                name: 'Mahin',
-                email: adminEmail,
+                name: 'Admin User',
+                email: 'admin@lms.com',
                 password_hash: passwordHash,
-                role: 'admin'
+                role: 'admin',
+                status: 'active'
             }
         });
-        console.log('Admin check complete.');
 
-        // 2. Instructors (20)
-        const instructors: User[] = [];
-        console.log('Seeding Instructors...');
+        // 2. Instructor (Main)
+        const [instructor] = await User.findOrCreate({
+            where: { email: 'instructor@lms.com' },
+            defaults: {
+                name: 'John Instructor',
+                email: 'instructor@lms.com',
+                password_hash: passwordHash,
+                role: 'instructor',
+                status: 'active'
+            }
+        });
+
+        // 3. Student (Main)
+        await User.findOrCreate({
+            where: { email: 'student@lms.com' },
+            defaults: {
+                name: 'Jane Student',
+                email: 'student@lms.com',
+                password_hash: passwordHash,
+                role: 'student',
+                status: 'active'
+            }
+        });
+
+        // 4. Bulk Instructors
+        const instructors: User[] = [instructor];
         for (let i = 0; i < 20; i++) {
             const fName = getRandomElement(firstNames);
             const lName = getRandomElement(lastNames);
-            const name = `${fName} ${lName}`;
             const email = `instructor.${fName.toLowerCase()}.${lName.toLowerCase()}${i}@lms.com`;
+            if (email === 'instructor@lms.com') continue;
 
             try {
-                const [user] = await User.findOrCreate({
+                const [inst] = await User.findOrCreate({
                     where: { email },
-                    defaults: { name, email, password_hash: passwordHash, role: 'instructor' }
+                    defaults: {
+                        name: `${fName} ${lName}`,
+                        email,
+                        password_hash: passwordHash,
+                        role: 'instructor',
+                        status: 'active'
+                    }
                 });
-                instructors.push(user);
-            } catch (e) {
-                console.log(`Skipped duplicate instructor: ${email}`);
-            }
+                instructors.push(inst);
+            } catch (e) { }
         }
 
-        // 3. Students (80)
+        // 5. Bulk Students
         const students: User[] = [];
-        console.log('Seeding Students...');
-        for (let i = 0; i < 80; i++) {
+        const studentsData = Array.from({ length: 80 }).map((_, i) => {
             const fName = getRandomElement(firstNames);
             const lName = getRandomElement(lastNames);
-            const name = `${fName} ${lName}`;
-            const email = `student.${fName.toLowerCase()}.${lName.toLowerCase()}${i}@lms.com`;
+            return {
+                name: `${fName} ${lName}`,
+                email: `student.${fName.toLowerCase()}.${lName.toLowerCase()}${i}@lms.com`,
+                password_hash: passwordHash,
+                role: 'student' as const,
+                status: 'active' as const
+            };
+        });
 
+        // Using findOrCreate loop instead of bulkCreate to safely handle existing users and get instances
+        for (const sData of studentsData) {
             try {
-                const [user] = await User.findOrCreate({
-                    where: { email },
-                    defaults: { name, email, password_hash: passwordHash, role: 'student' }
+                const [s] = await User.findOrCreate({
+                    where: { email: sData.email },
+                    defaults: sData
                 });
-                students.push(user);
-            } catch (e) {
-                console.log(`Skipped duplicate student: ${email}`);
-            }
+                students.push(s);
+            } catch (e) { }
         }
 
-        // 4. Courses & Lessons
-        console.log('Seeding Courses & Lessons...');
+        // 6. Courses & Lessons
         const allCourses: Course[] = [];
-        for (const instructor of instructors) {
-            // Each instructor creates 1-3 courses
+        for (const inst of instructors) {
             const numCourses = getRandomInt(1, 3);
             for (let j = 0; j < numCourses; j++) {
                 const title = `${getRandomElement(courseTitles)} - ${100 + j}`;
                 try {
-                    const course = await Course.create({
-                        title: title,
-                        description: `A comprehensive course about ${title}. Learn from expert ${instructor.name}.`,
-                        instructorId: instructor.id
+                    const [course] = await Course.findOrCreate({
+                        where: { title, instructorId: inst.id },
+                        defaults: {
+                            title,
+                            description: `Course by ${inst.name}`,
+                            instructorId: inst.id,
+                            status: 'published'
+                        }
                     });
                     allCourses.push(course);
 
-                    // Add 3-5 lessons per course
+                    // Lessons
                     const numLessons = getRandomInt(3, 5);
-                    for (let k = 0; k < numLessons; k++) {
-                        await Lesson.create({
-                            courseId: course.id,
-                            title: `Lesson ${k + 1}: ${getRandomElement(['Basics', 'Fundamentals', 'Deep Dive', 'Case Study'])}`,
-                            content: getRandomElement(lessonContents),
-                            orderIndex: k
-                        });
+                    const existingLessons = await Lesson.count({ where: { courseId: course.id } });
+                    if (existingLessons === 0) {
+                        for (let k = 0; k < numLessons; k++) {
+                            await Lesson.create({
+                                courseId: course.id,
+                                title: `Lesson ${k + 1}`,
+                                content: getRandomElement(lessonContents),
+                                orderIndex: k
+                            });
+                        }
                     }
 
-                    // Add 1 Assignment
-                    if (Math.random() > 0.5) {
-                        await Assignment.create({
-                            courseId: course.id,
-                            title: `Final Project for ${title}`,
-                            description: 'Submit your complete project repository link here.',
-                            dueDate: new Date(Date.now() + 86400000 * 7) // +7 days
-                        });
-                    }
-
-                } catch (e) {
-                    // ignore duplicate titles if any
-                }
+                } catch (e) { }
             }
         }
 
-        // 5. Enrollments & Progress
-        console.log('Seeding Enrollments & Progress...');
-        for (const student of students) {
-            // Enroll in 2-4 Random Courses
-            const enrolledCount = getRandomInt(2, 4);
-            const shuffledCourses = [...allCourses].sort(() => 0.5 - Math.random());
-            const selectedCourses = shuffledCourses.slice(0, enrolledCount);
-
-            for (const course of selectedCourses) {
-                try {
-                    await Enrollment.create({
-                        studentId: student.id,
-                        courseId: course.id,
-                        status: 'active',
-                        joinedAt: new Date()
-                    });
-
-                    // Simulate random progress (complete some lessons)
-                    const lessons = await Lesson.findAll({ where: { courseId: course.id } });
-                    const completedCount = getRandomInt(0, lessons.length);
-
-                    for (let m = 0; m < completedCount; m++) {
-                        await LessonProgress.create({
-                            studentId: student.id,
-                            lessonId: lessons[m].id,
-                            completedAt: new Date()
-                        });
-                    }
-
-                    // Award Badge if completed enough? (Simulated)
-                    if (completedCount >= 1 && Math.random() > 0.7) {
-                        await Badge.create({
-                            studentId: student.id,
-                            courseId: course.id,
-                            type: getRandomElement(['BRONZE', 'SILVER', 'GOLD']) as 'BRONZE' | 'SILVER' | 'GOLD' | 'MASTER',
-                            awardedAt: new Date()
-                        });
-                    }
-
-                } catch (e) {
-                    // Ignore duplicate enrollment
-                }
-            }
-        }
-
-        console.log('Full Database Seeding Complete! 🚀');
-        console.log(`- Instructors: ${instructors.length}`);
-        console.log(`- Students: ${students.length}`);
-        console.log(`- Courses: ${allCourses.length}`);
+        console.log('Seed completed successfully');
 
     } catch (error) {
         console.error('Seeding failed:', error);

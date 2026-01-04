@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
-import { getAllUsers, deleteUser, getProfile, updateProfile } from '../controllers/user.controller';
+import { getAllUsers, deleteUser, getProfile, updateProfile, updateUserStatus } from '../controllers/user.controller';
 
 const router = Router();
 
@@ -10,5 +10,6 @@ router.put('/profile', authenticateToken, updateProfile);
 
 router.get('/', authenticateToken, authorizeRoles('admin'), getAllUsers);
 router.delete('/:id', authenticateToken, authorizeRoles('admin'), deleteUser);
+router.put('/:id/status', authenticateToken, authorizeRoles('admin'), updateUserStatus);
 
 export default router;

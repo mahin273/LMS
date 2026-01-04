@@ -35,13 +35,21 @@ export default function RegisterPage() {
     // Watch role for manual select handling if using Shadcn Select
     const role = watch('role');
 
+    const [successMessage, setSuccessMessage] = useState('')
+
     const onSubmit = async (data: FormData) => {
         try {
             setError('')
+            setSuccessMessage('')
             const res = await client.post('/auth/register', data)
-            setToken(res.data.token)
-            await refetchUser() // Update global auth state
-            navigate('/dashboard')
+
+            if (res.data.token) {
+                setToken(res.data.token)
+                await refetchUser()
+                navigate('/dashboard')
+            } else if (res.data.message) {
+                setSuccessMessage(res.data.message)
+            }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Registration failed')
         }
@@ -89,10 +97,17 @@ export default function RegisterPage() {
                         </div>
 
                         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+                        {successMessage && (
+                            <div className="p-3 bg-green-100 border border-green-200 text-green-700 rounded text-sm text-center">
+                                {successMessage}
+                            </div>
+                        )}
 
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? 'Creating account...' : 'Create account'}
-                        </Button>
+                        {!successMessage && (
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? 'Creating account...' : 'Create account'}
+                            </Button>
+                        )}
                     </form>
                 </CardContent>
                 <CardFooter className="justify-center">

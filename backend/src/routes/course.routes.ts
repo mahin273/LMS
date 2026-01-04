@@ -9,7 +9,10 @@ import {
     rateCourse,
     deleteCourse,
     updateCourse,
-    getCourseAnalytics
+    getCourseAnalytics,
+    updateCourseStatus,
+    submitCourse,
+    getAllCoursesAdmin
 } from '../controllers/course.controller';
 import { getLessons, createLesson } from '../controllers/lesson.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -34,6 +37,13 @@ router.get('/:id/analytics', authenticateToken, authorizeRoles('instructor', 'ad
 // Course Lessons
 router.get('/:courseId/lessons', authenticateToken, getLessons);
 router.post('/:courseId/lessons', authenticateToken, authorizeRoles('instructor'), createLesson);
+
+// Admin
+router.get('/admin/all', authenticateToken, authorizeRoles('admin'), getAllCoursesAdmin);
+router.put('/:id/status', authenticateToken, authorizeRoles('admin'), updateCourseStatus);
+
+// Instructor Actions
+router.post('/:id/submit', authenticateToken, authorizeRoles('instructor'), submitCourse);
 
 // Admin/Instructor
 router.delete('/:id', authenticateToken, authorizeRoles('admin', 'instructor'), deleteCourse);

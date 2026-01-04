@@ -7,6 +7,7 @@ interface UserAttributes {
     password_hash: string;
     name: string;
     role: 'student' | 'instructor' | 'admin';
+    status: 'active' | 'pending' | 'rejected';
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> { }
@@ -17,6 +18,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     public password_hash!: string;
     public name!: string;
     public role!: 'student' | 'instructor' | 'admin';
+    public status!: 'active' | 'pending' | 'rejected';
     public password!: string;
 
     public readonly createdAt!: Date;
@@ -50,6 +52,11 @@ User.init(
             type: DataTypes.ENUM('student', 'instructor', 'admin'),
             allowNull: false,
             defaultValue: 'student',
+        },
+        status: {
+            type: DataTypes.ENUM('active', 'pending', 'rejected'),
+            allowNull: false,
+            defaultValue: 'active',
         },
     },
     {
