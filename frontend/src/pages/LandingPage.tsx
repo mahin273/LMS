@@ -1,8 +1,23 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import client from '@/api/client';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Star, BookOpen, Users } from 'lucide-react';
 
 export default function LandingPage() {
+    const { data: courses, isLoading } = useQuery({
+        queryKey: ['public-courses'],
+        queryFn: async () => {
+            const res = await client.get('/courses/public');
+            return res.data;
+        }
+    });
+
+    const featuredCourses = courses?.slice(0, 3);
+
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col">
             {/* Navbar */}
@@ -85,12 +100,115 @@ export default function LandingPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* Featured Courses Section */}
+                <section className="py-20 px-4">
+                    <div className="container mx-auto">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold mb-4">Popular Courses</h2>
+                            <p className="text-muted-foreground">Explore our highest-rated courses and start learning today.</p>
+                        </div>
+
+                        {isLoading ? (
+                            <div className="text-center">Loading courses...</div>
+                        ) : (
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {featuredCourses?.map((course: any, index: number) => (
+                                    <motion.div
+                                        key={course.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    >
+                                        <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                                            <CardHeader>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <Badge variant="secondary" className="mb-2">
+                                                        {course.category || 'General'}
+                                                    </Badge>
+                                                    <div className="flex items-center text-yellow-500 text-sm font-medium">
+                                                        <Star className="h-4 w-4 fill-current mr-1" />
+                                                        {course.averageRating ? Number(course.averageRating).toFixed(1) : 'New'}
+                                                    </div>
+                                                </div>
+                                                <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                                                <CardDescription className="line-clamp-2">{course.description}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="flex-1">
+                                                <div className="flex items-center text-sm text-muted-foreground gap-4 mt-2">
+                                                    <div className="flex items-center">
+                                                        <Users className="h-4 w-4 mr-1" />
+                                                        {course.enrollmentCount || 0} students
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <BookOpen className="h-4 w-4 mr-1" />
+                                                        {course.lessonsCount || 0} lessons
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                            <CardFooter>
+                                                <Link to={`/courses/${course.id}`} className="w-full">
+                                                    <Button className="w-full">View Course</Button>
+                                                </Link>
+                                            </CardFooter>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="text-center mt-12">
+                            <Link to="/courses">
+                                <Button variant="outline" size="lg">View All Courses</Button>
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+
             </main>
 
             {/* Footer */}
-            <footer className="border-t py-8 mt-auto">
-                <div className="container mx-auto px-4 text-center text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} LearnPortal. All rights reserved.</p>
+            <footer className="border-t py-12 bg-background">
+                <div className="container mx-auto px-4">
+                    <div className="grid md:grid-cols-4 gap-8 mb-8">
+                        <div>
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="h-6 w-6 bg-primary rounded flex items-center justify-center text-primary-foreground font-bold text-xs">LMS</div>
+                                <span className="font-bold">LearnPortal</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                Empowering students and educators worldwide with cutting-edge learning tools.
+                            </p>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Platform</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link to="/courses" className="hover:text-primary">Browse Courses</Link></li>
+                                <li><Link to="/features" className="hover:text-primary">Features</Link></li>
+                                <li><Link to="/pricing" className="hover:text-primary">Pricing</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Resources</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link to="/blog" className="hover:text-primary">Blog</Link></li>
+                                <li><Link to="/help" className="hover:text-primary">Help Center</Link></li>
+                                <li><Link to="/community" className="hover:text-primary">Community</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold mb-4">Legal</h4>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li><Link to="/privacy" className="hover:text-primary">Privacy Policy</Link></li>
+                                <li><Link to="/terms" className="hover:text-primary">Terms of Service</Link></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="pt-8 border-t text-center text-sm text-muted-foreground">
+                        <p>&copy; {new Date().getFullYear()} LearnPortal. All rights reserved.</p>
+                    </div>
                 </div>
             </footer>
         </div>
@@ -111,3 +229,5 @@ function FeatureCard({ title, description, delay }: { title: string, description
         </motion.div>
     );
 }
+
+
