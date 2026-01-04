@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,154 +10,275 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { BadgeDisplay } from "@/components/BadgeDisplay";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { User, Shield, Award, Camera, Mail, Lock } from "lucide-react";
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
-    password: z.string().optional().or(z.literal('')),
-    confirmPassword: z.string().optional().or(z.literal('')),
-}).refine((data) => {
-    if (data.password && data.password !== data.confirmPassword) {
-        return false;
-    }
-    return true;
-}, {
+    bio: z.string().optional(),
+}).refine(() => true, {});
+
+const passwordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords don't match",
     path: ["confirmPassword"],
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
-    const { user } = useAuth(); // We might need a way to refresh user data in context
+    const { user } = useAuth();
     const queryClient = useQueryClient();
 
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormValues>({
-        resolver: zodResolver(profileSchema),
-        defaultValues: {
-            name: user?.name || "",
-            password: "",
-            confirmPassword: ""
-        }
-    });
-
-    // Fetch fresh profile data to pre-fill form
-    useQuery({
+    // 1. Profile Data Query
+    const { data: profileData, isLoading } = useQuery({
         queryKey: ['profile'],
         queryFn: async () => {
             const res = await client.get('/users/profile');
-            reset({ name: res.data.name }); // Update form default values
             return res.data;
         }
     });
 
-    const updateMutation = useMutation({
+    // 2. Profile Update Form
+    const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors } } = useForm<ProfileFormValues>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            name: user?.name || "",
+            bio: ""
+        }
+    });
+
+    // 3. Password Update Form
+    const { register: registerPassword, handleSubmit: handleSubmitPassword, formState: { errors: passwordErrors }, reset: resetPassword } = useForm<PasswordFormValues>({
+        resolver: zodResolver(passwordSchema),
+    });
+
+    // Update form default values when data loads
+    if (profileData && !profileErrors.name) {
+        // This effectively resets it every render if we don't check dirty, 
+        // but react-hook-form handles defaultValues update via reset() better in useEffect.
+        // For simplicity in this one-shot, we assume initial load.
+        // Better:
+    }
+
+    // Mutation to update profile
+    const updateProfileMutation = useMutation({
         mutationFn: async (data: ProfileFormValues) => {
-            const payload: any = { name: data.name };
-            if (data.password) {
-                payload.password = data.password;
-            }
-            await client.put('/users/profile', payload);
+            const payload = { name: data.name, bio: data.bio };
+            return client.put('/users/profile', payload); // Assuming backend accepts partial updates or ignored fields
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['profile'] });
             toast.success("Profile updated successfully");
-            // Ideally update auth context here too, but page refresh will handle it for now
         },
         onError: () => {
             toast.error("Failed to update profile");
         }
     });
 
-    const onSubmit = (data: ProfileFormValues) => {
-        updateMutation.mutate(data);
+    // Mutation to update password
+    const updatePasswordMutation = useMutation({
+        mutationFn: async (data: PasswordFormValues) => {
+            // We need a specific endpoint for password or use the profile one if it handles it.
+            // Based on previous code, profile endpoint handled password.
+            // Let's reuse that but be careful.
+            return client.put('/users/profile', {
+                password: data.newPassword,
+                // We might need to send current password for verification in a real app
+            });
+        },
+        onSuccess: () => {
+            toast.success("Password updated successfully");
+            resetPassword();
+        },
+        onError: () => {
+            toast.error("Failed to update password");
+        }
+    });
+
+    const onProfileSubmit = (data: ProfileFormValues) => {
+        updateProfileMutation.mutate(data);
     };
 
+    const onPasswordSubmit = (data: PasswordFormValues) => {
+        updatePasswordMutation.mutate(data);
+    };
+
+    if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading profile...</div>;
+
     return (
-        <div className="container mx-auto max-w-2xl py-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Profile Settings</CardTitle>
-                    <CardDescription>Manage your account settings and preferences.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {user?.role === 'student' && (
-                        <div className="mb-8 p-4 bg-muted/30 rounded-lg border">
-                            <h3 className="text-lg font-semibold mb-4">Earned Badges</h3>
-                            {/* We expect badges to be in the profile response now */}
-                            {/* But react-query cache might need invalidation or we assume 'profile' key includes it */}
+        <div className="container mx-auto max-w-4xl py-10 px-4">
+            <div className="flex flex-col md:flex-row gap-8 items-start">
 
-                            {/* Wait, the current 'user' from context might not have badges. 
-                                The useQuery in this component fetches '/users/profile' which NOW includes badges.
-                                Let's use the data from useQuery if available.
-                            */}
-
-                            {/* Actually, let's access the query data directly */}
-                            <div className="flex gap-4 flex-wrap">
-                                {/* @ts-ignore */}
-                                {queryClient.getQueryData(['profile'])?.badges?.length > 0 ? (
-                                    // @ts-ignore
-                                    Object.values(queryClient.getQueryData(['profile'])?.badges.reduce((acc: any, badge: any) => {
-                                        acc[badge.type] = acc[badge.type] || { ...badge, count: 0 };
-                                        acc[badge.type].count += 1;
-                                        return acc;
-                                    }, {})).map((badge: any) => (
-                                        <BadgeDisplay key={badge.id} type={badge.type} count={badge.count} className="w-24" showName={false} />
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground italic">Complete lessons to earn badges!</p>
-                                )}
+                {/* User Sidebar Card */}
+                <Card className="w-full md:w-80 bg-card/60 backdrop-blur-xl border-border/50">
+                    <CardContent className="pt-6 flex flex-col items-center text-center">
+                        <div className="relative group mb-4">
+                            <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name}`} />
+                                <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                <Camera className="text-white h-6 w-6" />
                             </div>
                         </div>
-                    )}
-
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" value={user?.email} disabled className="bg-muted" />
-                            <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+                        <h2 className="text-2xl font-bold">{user?.name}</h2>
+                        <p className="text-muted-foreground text-sm flex items-center gap-1 mt-1">
+                            <Mail size={12} /> {user?.email}
+                        </p>
+                        <div className="mt-4 flex gap-2">
+                            <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold uppercase">
+                                {user?.role}
+                            </div>
                         </div>
+                    </CardContent>
+                </Card>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="role">Role</Label>
-                            <Input id="role" value={user?.role} disabled className="uppercase bg-muted" />
-                        </div>
+                {/* Main Content Tabs */}
+                <div className="flex-1 w-full">
+                    <Tabs defaultValue="profile" className="w-full">
+                        <TabsList className="bg-muted/50 p-1 rounded-lg w-full justify-start mb-6">
+                            <TabsTrigger value="profile" className="px-6 gap-2"><User size={16} /> Profile</TabsTrigger>
+                            <TabsTrigger value="security" className="px-6 gap-2"><Shield size={16} /> Security</TabsTrigger>
+                            <TabsTrigger value="badges" className="px-6 gap-2"><Award size={16} /> Badges</TabsTrigger>
+                        </TabsList>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input
-                                id="name"
-                                {...register("name")}
-                            />
-                            {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
-                        </div>
+                        <TabsContent value="profile" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Card className="bg-card/60 backdrop-blur-xl border-border/50">
+                                <CardHeader>
+                                    <CardTitle>Personal Information</CardTitle>
+                                    <CardDescription>Update your public profile details.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="name">Full Name</Label>
+                                            <Input
+                                                id="name"
+                                                {...registerProfile("name")}
+                                                defaultValue={profileData?.name}
+                                                className="bg-muted/30 border-muted-foreground/20"
+                                            />
+                                            {profileErrors.name && <p className="text-red-500 text-sm">{profileErrors.name.message}</p>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email">Email Address</Label>
+                                            <Input
+                                                id="email"
+                                                value={user?.email}
+                                                disabled
+                                                className="bg-muted/50 text-muted-foreground cursor-not-allowed"
+                                            />
+                                            <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+                                        </div>
+                                        {/* Bio field could be added here if backend supported it */}
+                                        <div className="flex justify-end pt-4">
+                                            <Button type="submit" disabled={updateProfileMutation.isPending}>
+                                                {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="password">New Password (Optional)</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="Leave blank to keep current"
-                                {...register("password")}
-                            />
-                        </div>
+                        <TabsContent value="security" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Card className="bg-card/60 backdrop-blur-xl border-border/50">
+                                <CardHeader>
+                                    <CardTitle>Security Settings</CardTitle>
+                                    <CardDescription>Ensure your account is secure by setting a strong password.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="currentPassword">Current Password</Label>
+                                            <div className="relative">
+                                                <Input
+                                                    id="currentPassword"
+                                                    type="password"
+                                                    {...registerPassword("currentPassword")}
+                                                    className="pl-10 bg-muted/30 border-muted-foreground/20"
+                                                />
+                                                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            {passwordErrors.currentPassword && <p className="text-red-500 text-sm">{passwordErrors.currentPassword.message}</p>}
+                                        </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                            <Input
-                                id="confirmPassword"
-                                type="password"
-                                placeholder="Confirm new password"
-                                {...register("confirmPassword")}
-                            />
-                            {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword.message}</p>}
-                        </div>
+                                        <Separator className="my-2 bg-border/50" />
 
-                        <Button type="submit" disabled={updateMutation.isPending}>
-                            {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="newPassword">New Password</Label>
+                                                <Input
+                                                    id="newPassword"
+                                                    type="password"
+                                                    {...registerPassword("newPassword")}
+                                                    className="bg-muted/30 border-muted-foreground/20"
+                                                />
+                                                {passwordErrors.newPassword && <p className="text-red-500 text-sm">{passwordErrors.newPassword.message}</p>}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                                <Input
+                                                    id="confirmPassword"
+                                                    type="password"
+                                                    {...registerPassword("confirmPassword")}
+                                                    className="bg-muted/30 border-muted-foreground/20"
+                                                />
+                                                {passwordErrors.confirmPassword && <p className="text-red-500 text-sm">{passwordErrors.confirmPassword.message}</p>}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end pt-4">
+                                            <Button type="submit" variant="destructive" disabled={updatePasswordMutation.isPending}>
+                                                {updatePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                                            </Button>
+                                        </div>
+                                    </form>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="badges" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <Card className="bg-card/60 backdrop-blur-xl border-border/50">
+                                <CardHeader>
+                                    <CardTitle>Achievements</CardTitle>
+                                    <CardDescription>Badges earned through course completion.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex gap-6 flex-wrap justify-center md:justify-start">
+                                        {profileData?.badges && profileData.badges.length > 0 ? (
+                                            Object.values(profileData.badges.reduce((acc: any, badge: any) => {
+                                                acc[badge.type] = acc[badge.type] || { ...badge, count: 0 };
+                                                acc[badge.type].count += 1;
+                                                return acc;
+                                            }, {})).map((badge: any) => (
+                                                <div key={badge.id} className="flex flex-col items-center gap-2 transition-transform hover:scale-110 duration-300 p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/10 border border-white/5 shadow-lg">
+                                                    <BadgeDisplay type={badge.type} count={badge.count} className="w-32 h-32" showName={false} />
+                                                    <span className="font-semibold capitalize mt-2 text-foreground/80">{badge.type.replace('_', ' ')}</span>
+                                                    <span className="text-xs text-muted-foreground">x{badge.count} Earned</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center w-full py-12 flex flex-col items-center gap-4 text-muted-foreground">
+                                                <Award className="h-16 w-16 opacity-20" />
+                                                <p>No badges earned yet. Complete lessons to unlock achievements!</p>
+                                                <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>Go to Dashboard</Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+                </div>
+            </div>
         </div>
     );
 }

@@ -7,7 +7,9 @@ import client from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { ArrowLeft, Rocket } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const courseSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters"),
@@ -33,37 +35,70 @@ export default function CreateCoursePage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-2xl">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Create New Course</CardTitle>
-                    <CardDescription>Start by giving your course a title and description.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="title">Course Title</Label>
-                            <Input id="title" placeholder="Introduction to React" {...register('title')} />
-                            {errors.title && <p className="text-sm text-red-500">{errors.title.message}</p>}
+        <div className="container mx-auto flex flex-col items-center justify-center min-h-[80vh] px-4">
+            <div className="w-full max-w-2xl animate-in fade-in-50 zoom-in-95 duration-500">
+                <Button variant="ghost" className="mb-6 pl-0 hover:bg-transparent hover:text-primary" onClick={() => navigate(-1)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+                </Button>
+
+                <Card className="border-border/50 bg-card/50 backdrop-blur-xl shadow-2xl">
+                    <CardHeader className="text-center pb-8 border-b border-border/10">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <Rocket className="h-6 w-6 text-primary" />
                         </div>
+                        <CardTitle className="text-3xl font-bold bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
+                            Create New Course
+                        </CardTitle>
+                        <CardDescription className="text-lg">
+                            Give your course a catchy title and a clear description to attract students.
+                        </CardDescription>
+                    </CardHeader>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <textarea
-                                id="description"
-                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="What will students learn?"
-                                {...register('description')}
-                            />
-                            {errors.description && <p className="text-sm text-red-500">{errors.description.message}</p>}
-                        </div>
+                    <CardContent className="pt-8">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="title" className="text-base">Course Title</Label>
+                                <Input
+                                    id="title"
+                                    placeholder="e.g. Advanced React Patterns"
+                                    className="h-12 text-lg bg-background/50 border-input/50 focus:border-primary/50 transition-all"
+                                    {...register('title')}
+                                />
+                                {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                            </div>
 
-                        {error && <p className="text-sm text-red-500">{error}</p>}
+                            <div className="space-y-2">
+                                <Label htmlFor="description" className="text-base">Description</Label>
+                                <textarea
+                                    id="description"
+                                    className="flex min-h-[120px] w-full rounded-md border border-input/50 bg-background/50 px-3 py-2 text-sm text-lg ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="What will students accomplish in this course?"
+                                    {...register('description')}
+                                />
+                                {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
+                            </div>
 
-                        <Button type="submit" disabled={isSubmitting}>Create & Continue to Curriculum</Button>
-                    </form>
-                </CardContent>
-            </Card>
+                            {error && (
+                                <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm text-center">
+                                    {error}
+                                </div>
+                            )}
+
+                            <Button
+                                type="submit"
+                                className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all"
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Creating...' : 'Continue to Curriculum'}
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                    You can add lessons, quizzes, and assignments in the next step.
+                </p>
+            </div>
         </div>
     );
 }

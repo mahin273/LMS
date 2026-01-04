@@ -4,15 +4,20 @@ import { getPayload } from '../lib/auth';
 
 interface RoleRouteProps {
     children: React.ReactNode;
-    requiredRole: string;
+    requiredRole: string | string[];
 }
 
 export default function RoleRoute({ children, requiredRole }: RoleRouteProps) {
     const userPayload = getPayload();
 
     // If not logged in or role doesn't match
-    if (!userPayload || userPayload.role !== requiredRole) {
-        // Optional: Redirect to unauthorized page or dashboard
+    if (!userPayload) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+
+    if (!roles.includes(userPayload.role)) {
         return <Navigate to="/dashboard" replace />;
     }
 

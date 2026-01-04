@@ -5,10 +5,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, ExternalLink } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
+
 
 interface Course {
     id: string;
@@ -121,11 +121,7 @@ export default function AdminCoursesPage() {
                                 </TableCell>
                                 <TableCell>{course.students?.length || 0}</TableCell>
                                 <TableCell className="text-right space-x-2">
-                                    <Button variant="ghost" size="icon" asChild>
-                                        <Link to={`/course/${course.id}`} target="_blank">
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
+
                                     {course.status === 'pending' && (
                                         <>
                                             <Button

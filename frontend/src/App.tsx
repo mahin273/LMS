@@ -15,19 +15,18 @@ import AdminCoursesPage from './pages/AdminCoursesPage'
 import SystemLogsPage from './pages/SystemLogsPage'
 import DatabaseSettingsPage from './pages/DatabaseSettingsPage'
 import ProfilePage from './pages/ProfilePage'
-import { isAuthenticated } from './lib/auth'
+import { isAuthenticated, getPayload } from './lib/auth'
 import Layout from './components/Layout'
 import RoleRoute from './components/RoleRoute'
 import LeaderboardPage from './pages/LeaderboardPage'
 import CourseDetailsPage from './pages/CourseDetailsPage'
-import client from '@/api/client'; // Need this for the wrapper logic
+import client from '@/api/client';
+import { Toaster } from "@/components/ui/sonner"
 
 // Wrapper to check enrollment
 function CourseAccessGuard() {
   const { courseId } = useParams();
 
-  // We need to know if the user is enrolled.
-  // We can check the "enrolled-courses" list.
   const { data: enrolledCourses, isLoading } = useQuery({
     queryKey: ['enrolled-courses'],
     queryFn: async () => {
@@ -39,16 +38,16 @@ function CourseAccessGuard() {
 
   if (isLoading) return <div>Loading access rights...</div>;
 
-  // Check if courseId is in enrolledCourses
   const isEnrolled = enrolledCourses?.some((c: any) => c.id === courseId);
+  const user = getPayload();
 
-  if (isEnrolled) {
+  // Allow if enrolled OR if admin
+  if (isEnrolled || user?.role === 'admin') {
     return <CoursePlayerPage />;
   } else {
     return <CourseDetailsPage />;
   }
 }
-
 
 const queryClient = new QueryClient()
 
@@ -58,8 +57,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   return <>{children}</>
 }
-
-import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
@@ -86,7 +83,7 @@ function App() {
               } />
 
               <Route path="/courses/:courseId" element={
-                <RoleRoute requiredRole="student">
+                <RoleRoute requiredRole={["student", "admin"]}>
                   <CourseAccessGuard />
                 </RoleRoute>
               } />

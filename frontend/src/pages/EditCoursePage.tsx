@@ -1,32 +1,38 @@
 import { useState, useEffect } from 'react';
-import { PlusCircle, Upload, FileText, Trash2 } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom'; // Added useNavigate
+import { PlusCircle, Upload, FileText, Trash2, ArrowLeft, MoreVertical, LayoutDashboard, Users, BarChart3, Settings, BookOpen, Video, PlayCircle, Save, AlertTriangle, File as FileIcon } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from "@/components/ui/progress";
+import { Separator } from '@/components/ui/separator';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function EditCoursePage() {
     const { courseId } = useParams();
     const queryClient = useQueryClient();
     const [isAddingLesson, setIsAddingLesson] = useState(false);
     const { register, handleSubmit, reset } = useForm();
-
-    // Separate form for course details
     const { register: registerCourse, handleSubmit: handleSubmitCourse, reset: resetCourse } = useForm();
-
     const navigate = useNavigate();
 
-    // 1. Fetch Lessons
     const { data: lessons, isLoading: isLoadingLessons } = useQuery({
         queryKey: ['lessons', courseId],
         queryFn: async () => {
@@ -35,28 +41,14 @@ export default function EditCoursePage() {
         }
     });
 
-    // 2. Fetch Course Details (Reuse logic or separate endpoint? For now assume we need to fetch it)
-    // Ideally we have an endpoint for single course details. For now, let's fetch strictly for 'edit'
-    // But wait, we don't have a single course GET endpoint for instructors easily accessible without ID.
-    // Let's implement a quick fetch for current course details from the specific endpoint or list?
-    // Actually, getPublicCourses returns all, but filters. 
-    // Let's just use the instructor list and filter client side OR add a getCourseById endpoint. 
-    // Assuming getInstructorCourses is cached. 
-    // Better: Add getCourseById endpoint for easier editing. 
-    // For now, I'll rely on the dashboard cache or fetching from list.
-    // Re-impl: Let's assume we can fetch it. 
     const { data: course, isLoading: isLoadingCourse } = useQuery({
         queryKey: ['course', courseId],
         queryFn: async () => {
-            // We need a way to fetch single course details. 
-            // Currently our API is getPublicCourses (all) or getInstructorCourses (all).
-            // Let's rely on getInstructorCourses for now and find it.
             const res = await client.get('/courses/instructor');
             return res.data.find((c: any) => c.id === courseId);
         }
     });
 
-    // Update settings form when data loads
     useEffect(() => {
         if (course) {
             resetCourse({
@@ -73,10 +65,10 @@ export default function EditCoursePage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['course', courseId] });
             queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
-            toast.success("Course updated");
+            toast.success("Course details updated successfully");
         },
         onError: () => {
-            toast.error("Failed to update course");
+            toast.error("Failed to update course details");
         }
     });
 
@@ -88,6 +80,7 @@ export default function EditCoursePage() {
             queryClient.invalidateQueries({ queryKey: ['lessons', courseId] });
             setIsAddingLesson(false);
             reset();
+            toast.success("Lesson created successfully");
         }
     });
 
@@ -128,12 +121,11 @@ export default function EditCoursePage() {
             setEditingLessonId(null);
             setFileUrl(null);
             reset();
-            toast.success("Lesson updated");
+            toast.success("Lesson updated successfully");
         }
     });
 
     const onAddLesson = (data: any) => {
-        // Extract URL from iframe if present
         let cleanVideoUrl = data.videoUrl;
         if (cleanVideoUrl && cleanVideoUrl.includes('<iframe')) {
             const srcMatch = cleanVideoUrl.match(/src=["'](.*?)["']/);
@@ -162,7 +154,6 @@ export default function EditCoursePage() {
         setEditingLessonId(lesson.id);
         setIsAddingLesson(true);
         setFileUrl(lesson.fileUrl);
-        // Timeout to allow form to mount if conditional rendering is instant
         setTimeout(() => {
             reset({
                 title: lesson.title,
@@ -171,8 +162,6 @@ export default function EditCoursePage() {
             });
         }, 0);
     };
-
-    if (isLoadingCourse || isLoadingLessons) return <div>Loading...</div>;
 
     const submitCourseMutation = useMutation({
         mutationFn: async () => {
@@ -187,17 +176,50 @@ export default function EditCoursePage() {
         }
     });
 
-    if (isLoadingCourse || isLoadingLessons) return <div>Loading...</div>;
+    if (isLoadingCourse || isLoadingLessons) {
+        return (
+            <div className="flex items-center justify-center h-[50vh]">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-muted"></div>
+                    <div className="h-4 w-32 rounded bg-muted"></div>
+                </div>
+            </div>
+        )
+    }
+
+    const onUpdateCourse = (data: any) => {
+        updateCourseMutation.mutate(data);
+    };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">Edit Course: {course?.title}</h1>
-                    <Badge variant={course?.status === 'published' ? 'default' : course?.status === 'pending' ? 'secondary' : 'outline'}>
-                        {course?.status || 'draft'}
-                    </Badge>
+        <div className="container mx-auto px-4 py-8 space-y-6 animate-in fade-in-50 slide-in-from-bottom-5 duration-500">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <div className="flex items-start gap-4">
+                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate('/dashboard')}>
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                    <div>
+                        <div className="flex items-center gap-3 mb-1">
+                            <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">
+                                {course?.title}
+                            </h1>
+                            <Badge
+                                variant={course?.status === 'published' ? 'default' : course?.status === 'pending' ? 'secondary' : 'outline'}
+                                className={cn(
+                                    course?.status === 'published' && "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20",
+                                    course?.status === 'pending' && "bg-yellow-500/10 text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20"
+                                )}
+                            >
+                                {course?.status || 'draft'}
+                            </Badge>
+                        </div>
+                        <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                            <LayoutDashboard className="h-3 w-3" /> Course Management Panel
+                        </p>
+                    </div>
                 </div>
+
                 <div className="flex gap-2">
                     {course?.status === 'draft' && (
                         <Button
@@ -207,109 +229,181 @@ export default function EditCoursePage() {
                                 }
                             }}
                             disabled={submitCourseMutation.isPending}
+                            className="shadow-lg shadow-primary/20"
                         >
                             {submitCourseMutation.isPending ? 'Submitting...' : 'Submit for Review'}
                         </Button>
                     )}
-                    <Button onClick={() => navigate('/dashboard')} variant="outline">Back to Dashboard</Button>
+                    <Link to={`/courses/${courseId}`}>
+                        <Button variant="outline">View as Student</Button>
+                    </Link>
                 </div>
             </div>
 
+            <Separator className="bg-border/50" />
+
             <Tabs defaultValue="lessons" className="w-full">
-                <TabsList className="mb-4">
-                    <TabsTrigger value="lessons">Lessons</TabsTrigger>
-                    <TabsTrigger value="students">Enrolled Students</TabsTrigger>
-                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                    <TabsTrigger value="assignments">Assignments</TabsTrigger>
-                    <TabsTrigger value="settings">Course Settings</TabsTrigger>
+                <TabsList className="w-full justify-start h-auto p-0 bg-transparent border-b border-border/50 rounded-none mb-6 gap-6 relative overflow-x-auto selection-none">
+                    <TabsTrigger
+                        value="lessons"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3 hover:text-primary transition-all"
+                    >
+                        <BookOpen className="h-4 w-4 mr-2" /> Curriculum
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="students"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3 hover:text-primary transition-all"
+                    >
+                        <Users className="h-4 w-4 mr-2" /> Students
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="assignments"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3 hover:text-primary transition-all"
+                    >
+                        <FileText className="h-4 w-4 mr-2" /> Assignments
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="analytics"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3 hover:text-primary transition-all"
+                    >
+                        <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="settings"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2 py-3 hover:text-primary transition-all"
+                    >
+                        <Settings className="h-4 w-4 mr-2" /> Settings
+                    </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="lessons">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lessons</CardTitle>
-                            <CardDescription>Manage the content of your course.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {lessons?.length === 0 ? <p className="text-muted-foreground">No lessons yet.</p> : (
-                                <div className="space-y-2">
-                                    {lessons?.map((lesson: any) => (
-                                        <div key={lesson.id} className="p-4 border rounded-md flex justify-between items-center bg-card">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-medium">{lesson.orderIndex}. {lesson.title}</span>
-                                                {lesson.fileUrl && <Badge variant="secondary" className="text-xs">With Attachment</Badge>}
+                <TabsContent value="lessons" className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Lesson List */}
+                        <Card className="lg:col-span-2 border-border/50 bg-card/40 backdrop-blur-sm">
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Course Content</CardTitle>
+                                    <CardDescription>Drag and drop to reorder lessons (coming soon).</CardDescription>
+                                </div>
+                                {!isAddingLesson && (
+                                    <Button onClick={() => { setIsAddingLesson(true); setEditingLessonId(null); reset({ title: '', content: '', videoUrl: '' }); setFileUrl(null); }} size="sm">
+                                        <PlusCircle className="h-4 w-4 mr-2" /> Add Lesson
+                                    </Button>
+                                )}
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {lessons?.length === 0 ? (
+                                    <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/10">
+                                        <BookOpen className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                                        <p className="text-muted-foreground">Start building your curriculum by adding the first lesson.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {lessons?.map((lesson: any, index: number) => (
+                                            <div key={lesson.id} className="group flex items-center justify-between p-3 rounded-lg border border-border/50 bg-background/50 hover:bg-background/80 hover:border-primary/30 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                                                        {index + 1}
+                                                    </span>
+                                                    <div>
+                                                        <h4 className="font-medium text-sm">{lesson.title}</h4>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {lesson.videoUrl && (
+                                                                <Badge variant="outline" className="text-[10px] h-5 gap-1 border-blue-500/20 text-blue-500">
+                                                                    <Video className="h-3 w-3" /> Video
+                                                                </Badge>
+                                                            )}
+                                                            {lesson.fileUrl && (
+                                                                <Badge variant="outline" className="text-[10px] h-5 gap-1 border-purple-500/20 text-purple-500">
+                                                                    <FileIcon className="h-3 w-3" /> File
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="sm" onClick={() => handleEditLesson(lesson)}>Edit</Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                                        onClick={() => {
+                                                            if (confirm("Delete lesson?")) {
+                                                                client.delete(`/lessons/${lesson.id}`)
+                                                                    .then(() => {
+                                                                        toast.success("Lesson deleted");
+                                                                        queryClient.invalidateQueries({ queryKey: ['lessons', courseId] });
+                                                                    })
+                                                                    .catch(err => toast.error("Failed to delete lesson"));
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <div className="flex gap-1">
-                                                <Button variant="ghost" size="sm" onClick={() => handleEditLesson(lesson)}>Edit</Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                    onClick={() => {
-                                                        if (confirm("Delete lesson?")) {
-                                                            client.delete(`/lessons/${lesson.id}`)
-                                                                .then(() => {
-                                                                    toast.success("Lesson deleted");
-                                                                    queryClient.invalidateQueries({ queryKey: ['lessons', courseId] });
-                                                                })
-                                                                .catch(err => toast.error("Failed to delete lesson"));
-                                                        }
-                                                    }}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
+                                        ))}
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Editor Panel */}
+                        <div className={cn("lg:col-span-1 transition-all duration-500", !isAddingLesson && "hidden lg:block lg:opacity-50 lg:pointer-events-none")}>
+                            {isAddingLesson ? (
+                                <Card className="border-primary/50 bg-card/60 backdrop-blur-md shadow-2xl sticky top-24">
+                                    <CardHeader className="pb-3 border-b border-border/50">
+                                        <CardTitle className="text-lg">{editingLessonId ? 'Edit Lesson' : 'New Lesson'}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-4">
+                                        <form onSubmit={handleSubmit(onAddLesson)} className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Label>Title</Label>
+                                                <Input {...register('title', { required: true })} placeholder="e.g., Intro to Hooks" className="bg-background/50" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Content (Markdown)</Label>
+                                                <Textarea
+                                                    {...register('content', { required: true })}
+                                                    className="min-h-[150px] bg-background/50 resize-y font-mono text-xs"
+                                                    placeholder="# Lesson Content..."
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Video Embed URL</Label>
+                                                <div className="relative">
+                                                    <Video className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                    <Input {...register('videoUrl')} placeholder="https://www.youtube.com/embed/..." className="pl-9 bg-background/50" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Attachment</Label>
+                                                <Input type="file" onChange={handleFileUpload} disabled={uploading} className="bg-background/50 cursor-pointer text-xs" />
+                                                {uploading && <Progress value={50} className="h-1" />}
+                                                {fileUrl && <p className="text-xs text-green-500 flex items-center gap-1"><FileIcon className="h-3 w-3" /> Attached successfully</p>}
+                                            </div>
+                                            <div className="flex gap-2 pt-2">
+                                                <Button type="submit" className="flex-1" disabled={createLessonMutation.isPending || updateLessonMutation.isPending || uploading}>
+                                                    {createLessonMutation.isPending || updateLessonMutation.isPending ? 'Saving...' : 'Save Lesson'}
+                                                </Button>
+                                                <Button type="button" variant="outline" onClick={() => { setIsAddingLesson(false); setEditingLessonId(null); setFileUrl(null); }} className="flex-1">
+                                                    Cancel
                                                 </Button>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {!isAddingLesson ? (
-                                <Button onClick={() => { setIsAddingLesson(true); setEditingLessonId(null); reset({ title: '', content: '', videoUrl: '' }); setFileUrl(null); }} variant="outline" className="w-full mt-4">+ Add Lesson</Button>
+                                        </form>
+                                    </CardContent>
+                                </Card>
                             ) : (
-                                <div className="mt-4 p-4 border rounded-md bg-muted/20">
-                                    <form onSubmit={handleSubmit(onAddLesson)} className="space-y-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h3 className="font-semibold">{editingLessonId ? 'Edit Lesson' : 'New Lesson'}</h3>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Lesson Title</Label>
-                                            <Input {...register('title', { required: true })} placeholder="e.g., Setting up the environment" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Content (Markdown)</Label>
-                                            <textarea
-                                                {...register('content', { required: true })}
-                                                className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                placeholder="# Lesson Content\n\nWrite your lesson here..."
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Video URL (YouTube Embed Link)</Label>
-                                            <Input {...register('videoUrl')} placeholder="https://www.youtube.com/embed/..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Lesson Material (Optional)</Label>
-                                            <Input type="file" onChange={handleFileUpload} disabled={uploading} />
-                                            {uploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
-                                            {fileUrl && <p className="text-xs text-green-600">File attached!</p>}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button type="submit" disabled={createLessonMutation.isPending || updateLessonMutation.isPending || uploading}>
-                                                {createLessonMutation.isPending || updateLessonMutation.isPending ? 'Saving...' : 'Save Lesson'}
-                                            </Button>
-                                            <Button type="button" variant="ghost" onClick={() => { setIsAddingLesson(false); setEditingLessonId(null); setFileUrl(null); }}>Cancel</Button>
-                                        </div>
-
-                                    </form>
+                                <div className="text-center py-12 text-muted-foreground hidden lg:block">
+                                    <p>Select "Add Lesson" or edit an existing one to see details here.</p>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="settings">
-                    <Card>
+                    <Card className="max-w-2xl mx-auto border-border/50 bg-card/40 backdrop-blur-sm">
                         <CardHeader>
                             <CardTitle>Course Details</CardTitle>
                             <CardDescription>Update your course information.</CardDescription>
@@ -318,64 +412,82 @@ export default function EditCoursePage() {
                             <form onSubmit={handleSubmitCourse(onUpdateCourse)} className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>Course Title</Label>
-                                    <Input {...registerCourse('title', { required: true })} />
+                                    <Input {...registerCourse('title', { required: true })} className="bg-background/50" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Description</Label>
-                                    <Textarea {...registerCourse('description', { required: true })} className="min-h-[100px]" />
+                                    <Textarea {...registerCourse('description', { required: true })} className="min-h-[100px] bg-background/50" />
                                 </div>
-                                <Button type="submit" disabled={updateCourseMutation.isPending}>
+                                <Button type="submit" disabled={updateCourseMutation.isPending} className="w-full">
                                     {updateCourseMutation.isPending ? 'Saving...' : 'Update Course'}
                                 </Button>
                             </form>
-                            <div className="mt-8 pt-6 border-t">
-                                <h3 className="text-lg font-medium text-destructive mb-2">Danger Zone</h3>
-                                <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-md bg-destructive/5">
-                                    <div>
-                                        <p className="font-medium text-destructive">Delete this course</p>
-                                        <p className="text-sm text-muted-foreground">Once deleted, it will be gone forever. Please be certain.</p>
-                                    </div>
-                                    <Button
-                                        variant="destructive"
-                                        onClick={() => {
-                                            const confirmText = prompt("Type 'DELETE' to confirm course deletion:");
-                                            if (confirmText === 'DELETE') {
-                                                client.delete(`/courses/${courseId}`)
-                                                    .then(() => {
-                                                        toast.success("Course deleted");
-                                                        navigate('/dashboard');
-                                                    })
-                                                    .catch(() => toast.error("Failed to delete course"));
-                                            }
-                                        }}
-                                    >
-                                        Delete Course
-                                    </Button>
+
+                            <Separator className="my-8 bg-destructive/20" />
+
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                                <div className="flex items-center gap-3 mb-2 text-destructive">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    <h3 className="font-semibold">Danger Zone</h3>
                                 </div>
+                                <p className="text-sm text-destructive/80 mb-4">
+                                    Deleting this course is permanent and cannot be undone. All lessons and student data will be lost.
+                                </p>
+                                <Button
+                                    variant="destructive"
+                                    className="w-full"
+                                    onClick={() => {
+                                        const confirmText = prompt("Type 'DELETE' to confirm course deletion:");
+                                        if (confirmText === 'DELETE') {
+                                            client.delete(`/courses/${courseId}`)
+                                                .then(() => {
+                                                    toast.success("Course deleted");
+                                                    navigate('/dashboard');
+                                                })
+                                                .catch(() => toast.error("Failed to delete course"));
+                                        }
+                                    }}
+                                >
+                                    Delete Course
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="students">
-                    <Card>
+                    <Card className="border-border/50 bg-card/40 backdrop-blur-sm">
                         <CardHeader>
-                            <CardTitle>Enrolled Students</CardTitle>
-                            <CardDescription>View all students enrolled in this course.</CardDescription>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Enrolled Students</CardTitle>
+                                    <CardDescription>View all students enrolled in this course.</CardDescription>
+                                </div>
+                                <Badge variant="secondary" className="px-3 py-1 text-sm bg-primary/10 text-primary border-primary/20">
+                                    {course?.students?.length || 0} Total
+                                </Badge>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {course?.students?.length === 0 ? (
-                                <p className="text-muted-foreground">No students enrolled yet.</p>
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                    <p>No students enrolled yet.</p>
+                                </div>
                             ) : (
-                                <div className="divide-y">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {course?.students?.map((student: any) => (
-                                        <div key={student.id} className="py-3 flex justify-between items-center">
-                                            <div>
-                                                <p className="font-medium">{student.name}</p>
-                                                <p className="text-sm text-muted-foreground">{student.email}</p>
-                                            </div>
-                                            <Badge variant="outline">Enrolled</Badge>
-                                        </div>
+                                        <Card key={student.id} className="bg-background/40 border-border/50">
+                                            <CardContent className="p-4 flex items-center gap-4">
+                                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                                    {student.name.charAt(0)}
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="font-medium truncate">{student.name}</p>
+                                                    <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
                                     ))}
                                 </div>
                             )}
@@ -404,31 +516,36 @@ function AnalyticsTab({ courseId }: { courseId: string }) {
         }
     });
 
-    if (isLoading) return <p>Loading analytics...</p>;
+    if (isLoading) return <div className="h-40 flex items-center justify-center"><p className="text-muted-foreground animate-pulse">Loading analytics...</p></div>;
 
     return (
-        <Card>
+        <Card className="border-border/50 bg-card/40 backdrop-blur-sm">
             <CardHeader>
-                <CardTitle>Student Analytics</CardTitle>
-                <CardDescription>Track student progress and completion rates.</CardDescription>
+                <CardTitle>Student Progress Analytics</CardTitle>
+                <CardDescription>Track completion rates and engagement.</CardDescription>
             </CardHeader>
             <CardContent>
                 {analytics?.length === 0 ? (
-                    <p className="text-muted-foreground">No student data available.</p>
+                    <div className="text-center py-12 text-muted-foreground">
+                        <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                        <p>No student data available yet.</p>
+                    </div>
                 ) : (
                     <div className="space-y-6">
                         {analytics?.map((item: any) => (
                             <div key={item.student.id} className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                                            {item.student.name.charAt(0)}
+                                        </div>
                                         <span className="font-medium">{item.student.name}</span>
-                                        <span className="text-muted-foreground ml-2">({item.student.email})</span>
                                     </div>
-                                    <span className="font-bold">{item.progress}%</span>
+                                    <span className="font-bold text-primary">{item.progress}%</span>
                                 </div>
                                 <Progress value={item.progress} className="h-2" />
-                                <p className="text-xs text-muted-foreground text-right">
-                                    {item.completedLessons} of {item.totalLessons} lessons completed
+                                <p className="text-xs text-muted-foreground text-right pt-1">
+                                    <span className="font-medium text-foreground">{item.completedLessons}</span> of {item.totalLessons} lessons completed
                                 </p>
                             </div>
                         ))}
@@ -438,15 +555,6 @@ function AnalyticsTab({ courseId }: { courseId: string }) {
         </Card>
     );
 }
-
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 
 function AssignmentsTab({ courseId, lessons }: { courseId: string, lessons: any[] }) {
     const queryClient = useQueryClient();
@@ -468,7 +576,7 @@ function AssignmentsTab({ courseId, lessons }: { courseId: string, lessons: any[
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['assignments', courseId] });
             reset();
-            toast.success("Assignment created");
+            toast.success("Assignment created successfully");
         }
     });
 
@@ -486,69 +594,78 @@ function AssignmentsTab({ courseId, lessons }: { courseId: string, lessons: any[
         createAssignmentMutation.mutate(data);
     };
 
-    if (isLoading) return <p>Loading assignments...</p>;
+    if (isLoading) return <div className="h-40 flex items-center justify-center"><p className="text-muted-foreground animate-pulse">Loading assignments...</p></div>;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Assignments</CardTitle>
-                <CardDescription>Create and manage course assignments.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-4">
-                    {assignments?.length === 0 ? <p className="text-muted-foreground">No assignments yet.</p> : (
-                        assignments?.map((assignment: any) => (
-                            <div key={assignment.id} className="p-4 border rounded-md flex justify-between items-center bg-card">
-                                <div>
-                                    <p className="font-medium">{assignment.title}</p>
-                                    <p className="text-xs text-muted-foreground">Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" size="sm" onClick={() => setSelectedAssignmentId(assignment.id)}>
-                                                View Submissions
-                                            </Button>
-                                        </DialogTrigger>
-                                        {selectedAssignmentId === assignment.id && (
-                                            <SubmissionsDialog assignmentId={assignment.id} courseId={courseId} />
-                                        )}
-                                    </Dialog>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <Card className="lg:col-span-2 border-border/50 bg-card/40 backdrop-blur-sm h-fit">
+                <CardHeader>
+                    <CardTitle>Assignments</CardTitle>
+                    <CardDescription>Manage course assignments and review specific submissions.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {assignments?.length === 0 ? (
+                        <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/10">
+                            <FileText className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                            <p className="text-muted-foreground">No assignments created yet.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {assignments?.map((assignment: any) => (
+                                <div key={assignment.id} className="p-4 border border-border/50 rounded-lg flex justify-between items-center bg-background/50 hover:border-primary/30 transition-all">
+                                    <div>
+                                        <p className="font-semibold text-sm">{assignment.title}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No due date'}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="outline" size="sm" className="h-8 shadow-sm" onClick={() => setSelectedAssignmentId(assignment.id)}>
+                                                    View Submissions
+                                                </Button>
+                                            </DialogTrigger>
+                                            {selectedAssignmentId === assignment.id && (
+                                                <SubmissionsDialog assignmentId={assignment.id} courseId={courseId} />
+                                            )}
+                                        </Dialog>
 
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive hover:text-destructive/90"
-                                        onClick={() => {
-                                            if (confirm("Delete assignment?")) deleteAssignmentMutation.mutate(assignment.id);
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() => {
+                                                if (confirm("Delete assignment?")) deleteAssignmentMutation.mutate(assignment.id);
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            ))}
+                        </div>
                     )}
-                </div>
+                </CardContent>
+            </Card>
 
-                <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-3">Add New Assignment</h3>
+            <Card className="border-border/50 bg-card/60 backdrop-blur-md sticky top-6 h-fit">
+                <CardHeader className="pb-3 border-b border-border/50">
+                    <CardTitle className="text-lg">New Assignment</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Title</Label>
-                                <Input {...register('title', { required: true })} placeholder="Assignment Title" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Due Date</Label>
-                                <Input type="date" {...register('dueDate')} />
-                            </div>
+                        <div className="space-y-2">
+                            <Label>Title</Label>
+                            <Input {...register('title', { required: true })} placeholder="Week 1 Assignment" className="bg-background/50" />
                         </div>
                         <div className="space-y-2">
-                            <Label>Associated Lesson (Optional)</Label>
+                            <Label>Due Date</Label>
+                            <Input type="date" {...register('dueDate')} className="bg-background/50" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Related Lesson</Label>
                             <select
                                 {...register('lessonId')}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <option value="">No specific lesson</option>
                                 {lessons?.map((l: any) => (
@@ -557,16 +674,16 @@ function AssignmentsTab({ courseId, lessons }: { courseId: string, lessons: any[
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Description</Label>
-                            <Textarea {...register('description')} placeholder="Instructions for students..." />
+                            <Label>Instructions</Label>
+                            <Textarea {...register('description')} placeholder="Detailed instructions..." className="bg-background/50 min-h-[100px]" />
                         </div>
-                        <Button type="submit" disabled={createAssignmentMutation.isPending}>
+                        <Button type="submit" disabled={createAssignmentMutation.isPending} className="w-full">
                             {createAssignmentMutation.isPending ? 'Creating...' : 'Create Assignment'}
                         </Button>
                     </form>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </div>
     );
 }
 
@@ -575,9 +692,6 @@ function SubmissionsDialog({ assignmentId, courseId }: { assignmentId: string, c
     const { data: submissions, isLoading } = useQuery({
         queryKey: ['submissions', assignmentId],
         queryFn: async () => {
-            // Note: We need to use the nested route because that's where we defined getSubmissions
-            // Route defined: router.get('/:id/submissions', ...) under /api/courses/:courseId/assignments
-            // So URL is: /api/courses/:courseId/assignments/:assignmentId/submissions
             const res = await client.get(`/courses/${courseId}/assignments/${assignmentId}/submissions`);
             return res.data;
         }
@@ -596,37 +710,44 @@ function SubmissionsDialog({ assignmentId, courseId }: { assignmentId: string, c
     if (isLoading) return <DialogContent>Loading submissions...</DialogContent>;
 
     return (
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
             <DialogHeader>
                 <DialogTitle>Student Submissions</DialogTitle>
                 <DialogDescription>Review and grade student work.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 mt-4">
                 {submissions?.length === 0 ? (
-                    <p className="text-muted-foreground">No submissions yet.</p>
+                    <div className="text-center py-8 text-muted-foreground">
+                        <p>No submissions to review yet.</p>
+                    </div>
                 ) : (
                     submissions?.map((sub: any) => (
-                        <div key={sub.id} className="p-4 border rounded-md space-y-3">
+                        <div key={sub.id} className="p-4 border border-border/50 rounded-lg space-y-3 bg-background/50">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="font-medium">{sub.student.name}</p>
+                                    <p className="font-medium text-sm">{sub.student.name}</p>
                                     <p className="text-xs text-muted-foreground">Submitted: {new Date(sub.submittedAt).toLocaleString()}</p>
                                 </div>
                                 <div className="text-right">
-                                    <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
-                                        View File
+                                    <a href={sub.fileUrl} target="_blank" rel="noopener noreferrer">
+                                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                            <FileIcon className="h-3 w-3" /> View File
+                                        </Button>
                                     </a>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-3 rounded text-sm">
+                            <Separator className="bg-border/30" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label className="text-xs">Grade (0-100)</Label>
+                                    <Label className="text-xs mb-1.5 block">Grade (0-100)</Label>
                                     <Input
                                         type="number"
                                         min="0"
                                         max="100"
                                         defaultValue={sub.grade}
+                                        className="h-8 bg-background"
                                         onBlur={(e) => {
                                             const val = e.target.value;
                                             if (val && val !== String(sub.grade)) {
@@ -636,17 +757,14 @@ function SubmissionsDialog({ assignmentId, courseId }: { assignmentId: string, c
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <Label className="text-xs">Feedback</Label>
+                                    <Label className="text-xs mb-1.5 block">Feedback</Label>
                                     <Input
                                         defaultValue={sub.feedback}
-                                        placeholder="Good job..."
+                                        placeholder="Enter feedback..."
+                                        className="h-8 bg-background"
                                         onBlur={(e) => {
                                             const val = e.target.value;
                                             if (val !== sub.feedback) {
-                                                // Ideally we submit both, but here we might trigger on just one change. 
-                                                // Let's rely on a separate save button for cleaner UX or just auto-save.
-                                                // Current implementation: Auto-save on blur if changed.
-                                                // We need the current grade to submit with feedback.
                                                 gradeMutation.mutate({ id: sub.id, grade: sub.grade, feedback: val });
                                             }
                                         }}

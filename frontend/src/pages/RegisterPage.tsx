@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-
+import { Loader2, User, Mail, Lock, GraduationCap } from 'lucide-react'
 
 const registerSchema = z.object({
-    name: z.string().min(2),
-    email: z.string().email(),
-    password: z.string().min(6),
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
     role: z.enum(['student', 'instructor']),
 })
 
@@ -25,15 +25,12 @@ export default function RegisterPage() {
     const navigate = useNavigate()
     const { refetchUser } = useAuth()
     const [error, setError] = useState('')
-    const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             role: 'student'
         }
     })
-
-    // Watch role for manual select handling if using Shadcn Select
-    const role = watch('role');
 
     const [successMessage, setSuccessMessage] = useState('')
 
@@ -55,63 +52,113 @@ export default function RegisterPage() {
         }
     }
 
-    // Simplified Select for speed if component missing, otherwise standard HTML select or implement Select
     return (
-        <div className="flex items-center justify-center min-h-screen bg-muted/40 px-4">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Register</CardTitle>
+        <div className="flex items-center justify-center min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-background to-background relative overflow-hidden">
+            {/* Background elements */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/10 blur-[120px]" />
+            </div>
+
+            <Card className="w-full max-w-sm border-white/5 bg-black/40 backdrop-blur-xl shadow-2xl ring-1 ring-white/10 my-8">
+                <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4">
+                        <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                    </div>
+                    <CardTitle className="text-2xl font-bold tracking-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
+                        Create an account
+                    </CardTitle>
                     <CardDescription>
-                        Create an account to start learning.
+                        Start your learning journey today
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="John Doe" {...register('name')} />
+                            <div className="relative">
+                                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="name"
+                                    placeholder="John Doe"
+                                    className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10"
+                                    {...register('name')}
+                                />
+                            </div>
                             {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" placeholder="m@example.com" {...register('email')} />
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="name@example.com"
+                                    className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10"
+                                    {...register('email')}
+                                />
+                            </div>
                             {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input id="password" type="password" {...register('password')} />
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10"
+                                    {...register('password')}
+                                />
+                            </div>
                             {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="role">I am a</Label>
                             <select
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex h-10 w-full rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-foreground"
                                 {...register('role')}
                             >
-                                <option value="student">Student</option>
-                                <option value="instructor">Instructor</option>
+                                <option value="student" className="bg-popover text-popover-foreground">Student</option>
+                                <option value="instructor" className="bg-popover text-popover-foreground">Instructor</option>
                             </select>
                         </div>
 
-                        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+                        {error && (
+                            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-sm text-destructive text-center">
+                                {error}
+                            </div>
+                        )}
                         {successMessage && (
-                            <div className="p-3 bg-green-100 border border-green-200 text-green-700 rounded text-sm text-center">
+                            <div className="p-3 rounded-md bg-green-500/10 border border-green-500/20 text-sm text-green-500 text-center">
                                 {successMessage}
                             </div>
                         )}
 
                         {!successMessage && (
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                {isSubmitting ? 'Creating account...' : 'Create account'}
+                            <Button type="submit" className="w-full h-11 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...
+                                    </>
+                                ) : 'Create account'}
                             </Button>
                         )}
                     </form>
                 </CardContent>
                 <CardFooter className="justify-center">
-                    <p className="text-sm text-muted-foreground">Already have an account? <Link to="/login" className="text-primary hover:underline">Login</Link></p>
+                    <p className="text-sm text-muted-foreground">
+                        Already have an account?{' '}
+                        <Link to="/login" className="font-medium text-primary hover:text-primary/80 hover:underline transition-colors">
+                            Login
+                        </Link>
+                    </p>
                 </CardFooter>
             </Card>
         </div>
