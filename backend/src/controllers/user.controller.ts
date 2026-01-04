@@ -2,12 +2,23 @@
 import { Request, Response } from 'express';
 import { User, Badge } from '../models';
 
+import { Op } from 'sequelize';
+
 export const getAllUsers = async (req: Request, res: Response) => {
-    const { role } = req.query;
+    const { role, search } = req.query;
     try {
-        const whereClause = role ? { role } : {};
+        const whereClause: any = {};
+        if (role) whereClause.role = role;
+
+        if (search) {
+            whereClause[Op.or] = [
+                { name: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
         const users = await User.findAll({
-            where: whereClause as any,
+            where: whereClause,
             attributes: ['id', 'name', 'email', 'role', 'createdAt']
         });
         res.json(users);

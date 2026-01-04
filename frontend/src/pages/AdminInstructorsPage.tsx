@@ -1,8 +1,10 @@
-
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '@/api/client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -17,10 +19,13 @@ interface User {
 export default function AdminInstructorsPage() {
     const queryClient = useQueryClient();
 
+    const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search, 500);
+
     const { data: users, isLoading } = useQuery({
-        queryKey: ['users', 'instructor'],
+        queryKey: ['users', 'instructor', debouncedSearch],
         queryFn: async () => {
-            const res = await client.get('/users?role=instructor');
+            const res = await client.get(`/users?role=instructor&search=${debouncedSearch}`);
             return res.data;
         }
     });
@@ -42,7 +47,15 @@ export default function AdminInstructorsPage() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-6">Manage Instructors</h1>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold">Manage Instructors</h1>
+                <Input
+                    placeholder="Search by name or email..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="max-w-sm"
+                />
+            </div>
 
             <div className="rounded-md border">
                 <Table>
