@@ -74,7 +74,7 @@ export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
             where: { instructorId },
             include: [
                 // Count students?
-                { model: User, as: 'students', attributes: ['id'] }
+                { model: User, as: 'students', attributes: ['id', 'name', 'email'] }
             ]
         });
         res.json(courses);
@@ -135,5 +135,68 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete course' });
+    }
+};
+
+export const updateCourse = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { title, description } = req.body;
+    const user = req.user;
+
+    try {
+        const course = await Course.findByPk(id);
+        if (!course) {
+            return res.status(404).json({ error: 'Course not found' });
+        }
+
+        if (course.instructorId !== user?.id && user?.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        course.title = title || course.title;
+        course.description = description || course.description;
+        await course.save();
+
+        res.json(course);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update course' });
+    }
+};
+
+export const getCourseAnalytics = async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    try {
+        const course = await Course.findByPk(id, {
+            include: [
+                { model: User, as: 'students', attributes: ['id', 'name', 'email'] },
+                { model: Lesson, as: 'lessons', attributes: ['id'] }
+            ]
+        });
+
+        if (!course) return res.status(404).json({ error: 'Course not found' });
+
+        const totalLessons = course.lessons?.length || 0;
+        const analytics = await Promise.all((course.students || []).map(async (student: any) => {
+            const completedCount = await LessonProgress.count({
+                where: {
+                    studentId: student.id,
+                    lessonId: course.lessons?.map(l => l.id)
+                }
+            });
+
+            const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+
+            return {
+                student: { id: student.id, name: student.name, email: student.email },
+                progress,
+                completedLessons: completedCount,
+                totalLessons
+            };
+        }));
+
+        res.json(analytics);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
     }
 };

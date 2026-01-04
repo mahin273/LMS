@@ -6,6 +6,8 @@ interface SubmissionAttributes {
     assignmentId: string;
     studentId: string;
     fileUrl: string;
+    grade?: number;
+    feedback?: string;
     submittedAt: Date;
 }
 
@@ -16,6 +18,8 @@ class Submission extends Model<SubmissionAttributes, SubmissionCreationAttribute
     public assignmentId!: string;
     public studentId!: string;
     public fileUrl!: string;
+    public grade!: number;
+    public feedback!: string;
     public submittedAt!: Date;
 
     public readonly createdAt!: Date;
@@ -40,6 +44,14 @@ Submission.init(
         fileUrl: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        grade: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        feedback: {
+            type: DataTypes.TEXT,
+            allowNull: true,
         },
         submittedAt: {
             type: DataTypes.DATE,

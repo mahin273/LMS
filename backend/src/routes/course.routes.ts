@@ -5,7 +5,9 @@ import {
     getInstructorCourses,
     createCourse,
     enrollCourse,
-    deleteCourse
+    deleteCourse,
+    updateCourse,
+    getCourseAnalytics
 } from '../controllers/course.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 
@@ -21,6 +23,8 @@ router.post('/:courseId/enroll', authenticateToken, authorizeRoles('student'), e
 // Instructor
 router.get('/instructor', authenticateToken, authorizeRoles('instructor'), getInstructorCourses);
 router.post('/', authenticateToken, authorizeRoles('instructor'), createCourse);
+router.put('/:id', authenticateToken, authorizeRoles('instructor', 'admin'), updateCourse);
+router.get('/:id/analytics', authenticateToken, authorizeRoles('instructor', 'admin'), getCourseAnalytics);
 
 // Admin/Instructor
 router.delete('/:id', authenticateToken, authorizeRoles('admin', 'instructor'), deleteCourse);

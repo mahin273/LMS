@@ -22,19 +22,40 @@ export const getLessons = async (req: Request, res: Response) => {
 
 export const createLesson = async (req: Request, res: Response) => {
     const { courseId } = req.params;
-    const { title, content, orderIndex } = req.body;
+    const { title, content, orderIndex, fileUrl } = req.body;
     try {
         const lesson = await Lesson.create({
             courseId,
             title,
             content, // Markdown
-            orderIndex: orderIndex || 0
+            orderIndex: orderIndex || 0,
+            fileUrl
         });
         res.status(201).json(lesson);
     } catch (error) {
         res.status(500).json({ error: 'Failed to create lesson' });
     }
 };
+
+export const updateLesson = async (req: Request, res: Response) => {
+    const { lessonId } = req.params;
+    const { title, content, orderIndex, fileUrl } = req.body;
+
+    try {
+        const lesson = await Lesson.findByPk(lessonId);
+        if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+        lesson.title = title || lesson.title;
+        lesson.content = content || lesson.content;
+        if (orderIndex !== undefined) lesson.orderIndex = orderIndex;
+        if (fileUrl !== undefined) lesson.fileUrl = fileUrl;
+
+        await lesson.save();
+        res.json(lesson);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update lesson' });
+    }
+}
 
 export const completeLesson = async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
@@ -69,5 +90,18 @@ export const completeLesson = async (req: AuthRequest, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to complete lesson' });
+    }
+};
+
+export const deleteLesson = async (req: Request, res: Response) => {
+    const { lessonId } = req.params;
+    try {
+        const lesson = await Lesson.findByPk(lessonId);
+        if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+
+        await lesson.destroy();
+        res.json({ message: 'Lesson deleted' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete lesson' });
     }
 };

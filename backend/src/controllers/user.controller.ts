@@ -32,3 +32,42 @@ export const deleteUser = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Failed to delete user' });
     }
 };
+
+import bcrypt from 'bcryptjs';
+
+export const getProfile = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const userId = req.user?.id;
+    try {
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'name', 'email', 'role', 'createdAt']
+        });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch profile' });
+    }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const userId = req.user?.id;
+    const { name, password } = req.body;
+
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        if (name) user.name = name;
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            user.password = hashedPassword;
+        }
+
+        await user.save();
+
+        res.json({ message: 'Profile updated successfully', user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update profile' });
+    }
+};

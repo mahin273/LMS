@@ -18,6 +18,9 @@ class Course extends Model<CourseAttributes, CourseCreationAttributes> implement
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
+
+    public lessons?: any[];
+    public students?: any[];
 }
 
 Course.init(

@@ -10,21 +10,34 @@ import courseRoutes from './routes/course.routes';
 import lessonRoutes from './routes/lesson.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
+import uploadRoutes from './routes/upload.routes';
+import { courseAssignmentRoutes, assignmentRoutes } from './routes/assignment.routes';
+import path from 'path';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving static files
+}));
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/lessons', lessonRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/courses', lessonRoutes); // Mounts /:courseId/lessons
+app.use('/api', lessonRoutes); // Mounts /lessons/:lessonId
+app.use('/api/courses', courseAssignmentRoutes); // Mounts /:courseId/assignments
+app.use('/api/assignments', assignmentRoutes); // Mounts /:id (delete)
 app.use('/api/admin', adminRoutes);
+app.use('/api', uploadRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'LMS API is running' });

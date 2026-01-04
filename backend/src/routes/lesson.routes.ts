@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getLessons, createLesson, completeLesson } from '../controllers/lesson.controller';
+import { getLessons, createLesson, completeLesson, updateLesson, deleteLesson } from '../controllers/lesson.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
 
 const router = Router({ mergeParams: true }); // Enable access to parent params check (courseId) if needed
@@ -12,6 +12,8 @@ const router = Router({ mergeParams: true }); // Enable access to parent params 
 
 router.get('/:courseId/lessons', authenticateToken, getLessons);
 router.post('/:courseId/lessons', authenticateToken, authorizeRoles('instructor'), createLesson);
+router.put('/lessons/:lessonId', authenticateToken, authorizeRoles('instructor', 'admin'), updateLesson);
+router.delete('/lessons/:lessonId', authenticateToken, authorizeRoles('instructor', 'admin'), deleteLesson);
 
 // Progress route
 router.post('/lessons/:lessonId/complete', authenticateToken, completeLesson);
