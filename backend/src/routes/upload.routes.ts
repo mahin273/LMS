@@ -9,7 +9,6 @@ router.post('/', authenticateToken, authorizeRoles('instructor', 'admin'), uploa
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-    // Return the URL relative to the server
     const fileUrl = `/uploads/${req.file.filename}`;
     res.json({ url: fileUrl });
 });

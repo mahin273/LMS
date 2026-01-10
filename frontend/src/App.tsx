@@ -23,7 +23,6 @@ import CourseDetailsPage from './pages/CourseDetailsPage'
 import client from '@/api/client';
 import { Toaster } from "@/components/ui/sonner"
 
-// Wrapper to check enrollment
 function CourseAccessGuard() {
   const { courseId } = useParams();
 
@@ -41,7 +40,7 @@ function CourseAccessGuard() {
   const isEnrolled = enrolledCourses?.some((c: any) => c.id === courseId);
   const user = getPayload();
 
-  // Allow if enrolled OR if admin
+
   if (isEnrolled || user?.role === 'admin') {
     return <CoursePlayerPage />;
   } else {

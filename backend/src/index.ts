@@ -21,22 +21,21 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving static files
+    crossOriginResourcePolicy: { policy: "cross-origin" } 
 }));
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/courses', courseRoutes);
-// app.use('/api/courses', lessonRoutes); // Removed: moved to courseRoutes
-app.use('/api/lessons', lessonRoutes); // Mounts /:lessonId and /:lessonId/complete
-app.use('/api/courses', courseAssignmentRoutes); // Mounts /:courseId/assignments
-app.use('/api/assignments', assignmentRoutes); // Mounts /:id (delete)
+
+app.use('/api/lessons', lessonRoutes);
+app.use('/api/courses', courseAssignmentRoutes);
+app.use('/api/assignments', assignmentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/gamification', gamificationRoutes);

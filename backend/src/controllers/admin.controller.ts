@@ -9,8 +9,6 @@ export const getSystemStats = async (req: Request, res: Response) => {
         const totalCourses = await Course.count();
         const totalEnrollments = await Enrollment.count();
 
-        // Simple mock data for chart (last 7 days activity)
-        // In a real app, we'd query this with GROUP BY createdAt
         const activityData = [
             { name: 'Mon', users: 4, courses: 1 },
             { name: 'Tue', users: 3, courses: 0 },
@@ -18,7 +16,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
             { name: 'Thu', users: 7, courses: 1 },
             { name: 'Fri', users: 5, courses: 3 },
             { name: 'Sat', users: 10, courses: 0 },
-            { name: 'Sun', users: totalUsers > 120 ? 12 : 6, courses: 2 }, // Dynamic-ish
+            { name: 'Sun', users: totalUsers > 120 ? 12 : 6, courses: 2 },
         ];
 
         res.json({
@@ -38,7 +36,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
 
 export const getSystemLogs = async (req: Request, res: Response) => {
     try {
-        // Fetch recent users and courses as "logs"
+        
         const recentUsers = await User.findAll({
             limit: 10,
             order: [['createdAt', 'DESC']],

@@ -13,9 +13,6 @@ export const getLessons = async (req: AuthRequest, res: Response) => {
     const userRole = req.user?.role;
 
     try {
-        // Access Control:
-        // 1. Instructors/Admins can access.
-        // 2. Students must be enrolled.
 
         if (userRole === 'student') {
             const enrollment = await Enrollment.findOne({
@@ -36,16 +33,11 @@ export const getLessons = async (req: AuthRequest, res: Response) => {
             return res.json(lessons);
         }
 
-        // Sequential Access Logic for Students
-        // 1. Fetch progress
         const progress = await LessonProgress.findAll({
             where: { studentId: userId }
         });
         const completedLessonIds = new Set(progress.map(p => p.lessonId));
 
-        // 2. Determine locked status
-        // Logic: A lesson is LOCKED if the PREVIOUS lesson is NOT completed.
-        // The first lesson is always unlocked.
 
         const lessonsWithStatus = lessons.map((lesson, index) => {
             const isCompleted = completedLessonIds.has(lesson.id);
@@ -133,11 +125,10 @@ export const completeLesson = async (req: AuthRequest, res: Response) => {
     if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
-        // 1. Verify lesson exists
+       
         const lesson = await Lesson.findByPk(lessonId);
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
-        // 2. Mark as complete (Idempotent)
         const [progress, created] = await LessonProgress.findOrCreate({
             where: {
                 studentId,
@@ -151,7 +142,7 @@ export const completeLesson = async (req: AuthRequest, res: Response) => {
         });
 
         // 3. Trigger Gamification Engine
-        // Run asynchronously so we don't block the response? 
+        // Run asynchronously so we don't block the response?
         // Ideally yes, but for now we await to ensure correctness in this synchronous flow.
         await GamificationService.checkAndAwardBadges(studentId, lesson.courseId);
 

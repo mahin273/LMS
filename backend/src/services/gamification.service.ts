@@ -2,11 +2,11 @@ import { Badge, Lesson, LessonProgress } from '../models';
 
 export const GamificationService = {
     async checkAndAwardBadges(studentId: string, courseId: string) {
-        // 1. Get total lessons count
+
         const totalLessons = await Lesson.count({ where: { courseId } });
         if (totalLessons === 0) return;
 
-        // 2. Get completed lessons count
+
         const completedLessons = await LessonProgress.count({
             include: [
                 {
@@ -19,9 +19,6 @@ export const GamificationService = {
             where: { studentId }
         });
 
-        // Better query: Find completions where the lesson belongs to the course
-        // But since LessonProgress is a join table, we might need a raw query or correct include.
-        // Let's rely on finding all lessons of the course first, then counting progress.
         const courseLessonIds = (await Lesson.findAll({ where: { courseId }, attributes: ['id'] })).map(l => l.id);
 
         const completedCount = await LessonProgress.count({
@@ -35,7 +32,6 @@ export const GamificationService = {
 
         console.log(`User ${studentId} progress in Course ${courseId}: ${progressPercent}%`);
 
-        // 3. Define Milestones
         const milestones = [
             { type: 'BRONZE', threshold: 25 },
             { type: 'SILVER', threshold: 50 },
@@ -43,10 +39,10 @@ export const GamificationService = {
             { type: 'MASTER', threshold: 100 },
         ];
 
-        // 4. Check and Award
+
         for (const milestone of milestones) {
             if (progressPercent >= milestone.threshold) {
-                // Check if already awarded
+                
                 const existingBadge = await Badge.findOne({
                     where: {
                         studentId,
