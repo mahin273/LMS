@@ -1,5 +1,4 @@
-import { useRef } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
+import { motion, useMotionValue } from 'framer-motion';
 import {
     LayoutDashboard,
     BookOpen,
@@ -7,7 +6,6 @@ import {
     UserCircle,
     LogOut,
     Search,
-    Bell
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';

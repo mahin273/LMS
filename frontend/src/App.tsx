@@ -13,6 +13,7 @@ import LandingPage from './pages/LandingPage'
 import AdminStudentsPage from './pages/AdminStudentsPage'
 import AdminInstructorsPage from './pages/AdminInstructorsPage'
 import AdminCoursesPage from './pages/AdminCoursesPage'
+import AdminUsersPage from './pages/AdminUsersPage'
 import SystemLogsPage from './pages/SystemLogsPage'
 import DatabaseSettingsPage from './pages/DatabaseSettingsPage'
 import ProfilePage from './pages/ProfilePage'
@@ -93,6 +94,7 @@ function App() {
               {/* Admin Routes */}
               <Route path="/admin/students" element={<AdminStudentsPage />} />
               <Route path="/admin/instructors" element={<AdminInstructorsPage />} />
+              <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/courses" element={<AdminCoursesPage />} />
               <Route path="/admin/logs" element={<SystemLogsPage />} />
               <Route path="/admin/settings" element={<DatabaseSettingsPage />} />

@@ -1,0 +1,15 @@
+
+> frontend@0.0.0 build
+> tsc -b && vite build
+
+src/components/GlassCard.tsx(3,10): error TS1484: 'ReactNode' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/AdminUsersPage.tsx(67,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(options: DefinedInitialDataOptions<unknown, Error, unknown, (string | number)[]>, queryClient?: QueryClient | undefined): DefinedUseQueryResult<unknown, Error>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'DefinedInitialDataOptions<unknown, Error, unknown, (string | number)[]>'.
+  Overload 2 of 3, '(options: UndefinedInitialDataOptions<any, Error, any, (string | number)[]>, queryClient?: QueryClient | undefined): UseQueryResult<...>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'UndefinedInitialDataOptions<any, Error, any, (string | number)[]>'.
+  Overload 3 of 3, '(options: UseQueryOptions<any, Error, any, (string | number)[]>, queryClient?: QueryClient | undefined): UseQueryResult<any, Error>', gave the following error.
+    Object literal may only specify known properties, and 'keepPreviousData' does not exist in type 'UseQueryOptions<any, Error, any, (string | number)[]>'.
+src/pages/AdminUsersPage.tsx(70,25): error TS2339: Property 'users' does not exist on type '{}'.
+src/pages/AdminUsersPage.tsx(71,30): error TS2339: Property 'totalPages' does not exist on type '{}'.
+src/pages/AdminUsersPage.tsx(135,60): error TS2339: Property 'total' does not exist on type '{}'.

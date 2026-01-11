@@ -74,18 +74,7 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground">Total courses available</p>
                     </CardContent>
                 </Card>
-                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">System Health</CardTitle>
-                        <Activity className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-500 capitalize">{stats?.systemStatus || 'Unknown'}</div>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Database className="h-3 w-3" /> Ver: {stats?.dbVersion?.substring(0, 15)}...
-                        </p>
-                    </CardContent>
-                </Card>
+
                 <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Student/Teacher Ratio</CardTitle>
@@ -126,11 +115,11 @@ export default function AdminDashboard() {
                                         tickFormatter={(value) => `${value}`}
                                     />
                                     <RechartsTooltip
-                                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                                        contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#333', borderRadius: '8px' }}
+                                        cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                        contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', borderColor: '#333', borderRadius: '8px' }}
                                     />
                                     <Bar dataKey="users" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="New Users" />
-                                    <Bar dataKey="courses" fill="hsl(var(--secondary))" radius={[4, 4, 0, 0]} name="New Courses" />
+                                    <Bar dataKey="courses" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="New Courses" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>

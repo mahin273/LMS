@@ -1,6 +1,6 @@
 
 import { Request, Response } from 'express';
-import { User, Badge } from '../models';
+import { User, Badge, LessonProgress, Course, Assignment, Enrollment } from '../models';
 
 import { Op } from 'sequelize';
 
@@ -104,5 +104,89 @@ export const updateUserStatus = async (req: Request, res: Response) => {
         res.json({ message: `User status updated to ${status}`, user });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update user status' });
+    }
+};
+
+export const getStudentActivity = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const studentId = req.user?.id;
+
+    try {
+        const last7Days: any = {};
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            last7Days[dateStr] = 0;
+        }
+
+        const progress = await LessonProgress.findAll({
+            where: {
+                studentId,
+                completedAt: {
+                    [Op.gte]: new Date(new Date().setDate(new Date().getDate() - 7))
+                }
+            },
+            attributes: ['completedAt']
+        });
+
+        progress.forEach((p: any) => {
+            const dateStr = new Date(p.completedAt).toISOString().split('T')[0];
+            if (last7Days[dateStr] !== undefined) {
+                last7Days[dateStr]++;
+            }
+        });
+
+        const chartData = Object.keys(last7Days).map(date => ({
+            name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
+            date,
+            lessons: last7Days[date]
+        }));
+
+        res.json(chartData);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch activity' });
+    }
+};
+
+export const getStudentDeadlines = async (req: Request, res: Response) => {
+    // @ts-ignore
+    const studentId = req.user?.id;
+
+    try {
+        // Find assignments for courses the student is enrolled in
+        const nextWeek = new Date();
+        nextWeek.setDate(nextWeek.getDate() + 7);
+
+        const assignments = await Assignment.findAll({
+            where: {
+                dueDate: {
+                    [Op.between]: [new Date(), nextWeek]
+                }
+            },
+            include: [
+                {
+                    model: Course,
+                    as: 'course',
+                    attributes: ['title'],
+                    required: true,
+                    include: [{
+                        model: User,
+                        as: 'students',
+                        where: { id: studentId },
+                        attributes: []
+                    }]
+                }
+            ],
+            order: [['dueDate', 'ASC']],
+            limit: 5
+        });
+
+        res.json(assignments);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch deadlines' });
     }
 };

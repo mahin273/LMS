@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, Trophy, CheckCircle, Clock } from 'lucide-react';
+import { BookOpen, Trophy, CheckCircle, Clock, Play, Calendar, ArrowRight, LayoutDashboard } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 export default function StudentDashboard() {
     const { data: courses, isLoading: isLoadingCourses } = useQuery({
@@ -24,6 +25,24 @@ export default function StudentDashboard() {
             return res.data;
         }
     });
+
+    const { data: activity } = useQuery({
+        queryKey: ['student-activity'],
+        queryFn: async () => {
+            const res = await client.get('/users/activity');
+            return res.data;
+        }
+    });
+
+    const { data: deadlines } = useQuery({
+        queryKey: ['student-deadlines'],
+        queryFn: async () => {
+            const res = await client.get('/users/deadlines');
+            return res.data;
+        }
+    });
+
+
 
     if (isLoadingCourses) {
         return (
@@ -52,6 +71,8 @@ export default function StudentDashboard() {
                     <Button className="shadow-lg shadow-primary/20">Find a Course</Button>
                 </Link>
             </div>
+
+
 
             <Separator className="bg-border/50" />
 
@@ -98,6 +119,46 @@ export default function StudentDashboard() {
 
                 {/* Main Content Area: Courses */}
                 <div className="lg:col-span-3 space-y-6">
+
+                    {/* Activity Graph */}
+                    <Card className="bg-card/50 backdrop-blur-sm border-primary/10">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <LayoutDashboard className="h-5 w-5 text-primary" />
+                                Weekly Activity
+                            </CardTitle>
+                            <CardDescription>Your learning streak over the last 7 days</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-[200px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={activity || []}>
+                                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+                                        <XAxis
+                                            dataKey="name"
+                                            stroke="#888888"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                        />
+                                        <YAxis
+                                            stroke="#888888"
+                                            fontSize={12}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            allowDecimals={false}
+                                        />
+                                        <RechartsTooltip
+                                            cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                                            contentStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.8)', borderColor: '#333', borderRadius: '8px' }}
+                                        />
+                                        <Bar dataKey="lessons" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Lessons Completed" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold flex items-center gap-2">
                             <BookOpen className="h-5 w-5 text-primary" />
@@ -127,6 +188,36 @@ export default function StudentDashboard() {
 
                 {/* Sidebar Area: Stats & Badges */}
                 <div className="space-y-6">
+
+                    {/* Upcoming Deadlines */}
+                    <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-lg">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Calendar className="h-5 w-5 text-red-400" />
+                                Deadlines
+                            </CardTitle>
+                            <CardDescription>Assignments due soon</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4">
+                            {!deadlines || deadlines.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">No upcoming deadlines 🎉</p>
+                            ) : (
+                                deadlines.map((d: any) => (
+                                    <div key={d.id} className="flex flex-col gap-1 border-b border-border/50 last:border-0 pb-3 last:pb-0 min-w-0">
+                                        <span className="font-medium text-sm truncate">{d.title}</span>
+                                        <span className="text-xs text-muted-foreground truncate">{d.course?.title}</span>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <BadgeDisplay type="BRONZE" count={0} className="w-2 h-2 rounded-full hidden" />
+                                            <span className="text-xs font-mono bg-red-500/10 text-red-500 px-1.5 py-0.5 rounded">
+                                                {new Date(d.dueDate).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </CardContent>
+                    </Card>
+
                     <Card className="bg-card/50 backdrop-blur-sm border-primary/10 shadow-lg">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-lg">

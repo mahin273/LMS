@@ -8,6 +8,7 @@ const sidebarItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['student', 'instructor', 'admin'] },
     { icon: BookOpen, label: 'Courses', href: '/courses', roles: ['student', 'instructor'] },
     { icon: Trophy, label: 'Leaderboard', href: '/leaderboard', roles: ['student', 'instructor'] },
+    { icon: Users, label: 'Manage Users', href: '/admin/users', roles: ['admin'] },
     { icon: Users, label: 'Students', href: '/admin/students', roles: ['admin'] },
     { icon: GraduationCap, label: 'Instructors', href: '/admin/instructors', roles: ['admin'] },
     { icon: BookOpen, label: 'All Courses', href: '/admin/courses', roles: ['admin'] },

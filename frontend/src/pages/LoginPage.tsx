@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Loader2, Lock, Mail, Chrome, ArrowRight, Wand2 } from 'lucide-react'
+import { Loader2, Lock, Mail, Chrome, Wand2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner' // Assuming sonner is installed
 
@@ -58,10 +58,10 @@ export default function LoginPage() {
     const onMagicLinkSubmit = async (data: MagicLinkData) => {
         try {
             await client.post('/auth/magic-link', data)
-            toast.success("Magic link sent! Check your email.")
+            toast.success("Instant Login link sent! Check your email.")
             resetMagic()
         } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Failed to send magic link')
+            toast.error(err.response?.data?.error || 'Failed to send Instant Login link')
         }
     }
 
@@ -117,7 +117,7 @@ export default function LoginPage() {
                         <Tabs defaultValue="password" className="w-full">
                             <TabsList className="grid w-full grid-cols-2 mb-4 bg-white/5">
                                 <TabsTrigger value="password">Password</TabsTrigger>
-                                <TabsTrigger value="magic-link">Magic Link</TabsTrigger>
+                                <TabsTrigger value="magic-link">Instant Login</TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="password">
@@ -194,7 +194,7 @@ export default function LoginPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <Wand2 className="mr-2 h-4 w-4" /> Send Magic Link
+                                                <Wand2 className="mr-2 h-4 w-4" /> Send Instant Login Link
                                             </>
                                         )}
                                     </Button>

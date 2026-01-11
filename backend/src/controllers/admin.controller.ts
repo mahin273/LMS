@@ -4,6 +4,7 @@ import { User, Course, Enrollment } from '../models';
 import sequelize from '../config/database';
 
 import { Op } from 'sequelize';
+import bcrypt from 'bcrypt';
 
 export const getSystemStats = async (req: Request, res: Response) => {
     try {
@@ -146,5 +147,113 @@ export const clearCache = async (req: Request, res: Response) => {
         res.json({ message: 'System cache cleared successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to clear cache' });
+    }
+};
+
+export const getAllUsers = async (req: Request, res: Response) => {
+    try {
+        const { page = 1, limit = 10, search = '', role, status } = req.query;
+        const offset = (Number(page) - 1) * Number(limit);
+
+        const whereClause: any = {};
+
+        if (search) {
+            whereClause[Op.or] = [
+                { name: { [Op.like]: `%${search}%` } },
+                { email: { [Op.like]: `%${search}%` } }
+            ];
+        }
+
+        if (role && role !== 'all') {
+            whereClause.role = role;
+        }
+
+        if (status && status !== 'all') {
+            whereClause.status = status;
+        }
+
+        const { count, rows } = await User.findAndCountAll({
+            where: whereClause,
+            limit: Number(limit),
+            offset: Number(offset),
+            order: [['createdAt', 'DESC']],
+            attributes: { exclude: ['password_hash'] }
+        });
+
+        res.json({
+            users: rows,
+            total: count,
+            page: Number(page),
+            totalPages: Math.ceil(count / Number(limit))
+        });
+    } catch (error) {
+        console.error('Fetch users error:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
+
+export const updateUserStatus = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // 'active' or 'banned'
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ error: 'Cannot change status of an admin' });
+        }
+
+        user.status = status;
+        await user.save();
+
+        res.json({ message: `User status updated to ${status}`, user });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update user status' });
+    }
+};
+
+export const updateUserRole = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body; // 'student' or 'instructor'
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'admin') {
+            return res.status(403).json({ error: 'Cannot change role of an admin' });
+        }
+
+        user.role = role;
+        await user.save();
+
+        res.json({ message: `User role updated to ${role}`, user });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update user role' });
+    }
+};
+
+export const resetUserPassword = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const password = 'password123'; // Default reset password
+
+        const user = await User.findByPk(id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const hash = await bcrypt.hash(password, 10);
+        user.password_hash = hash;
+        await user.save();
+
+        res.json({ message: 'Password reset to default: password123' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to reset password' });
     }
 };
