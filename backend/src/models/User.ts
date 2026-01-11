@@ -11,6 +11,8 @@ interface UserAttributes {
     googleId?: string;
     magicLinkToken?: string;
     magicLinkExpiresAt?: Date;
+    bio?: string;
+    avatarUrl?: string;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> { }
@@ -25,6 +27,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     public googleId!: string;
     public magicLinkToken!: string;
     public magicLinkExpiresAt!: Date;
+    public bio!: string;
+    public avatarUrl!: string;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -74,6 +78,14 @@ User.init(
         },
         magicLinkExpiresAt: {
             type: DataTypes.DATE,
+            allowNull: true,
+        },
+        bio: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        avatarUrl: {
+            type: DataTypes.STRING,
             allowNull: true,
         },
     },

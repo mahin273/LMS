@@ -14,6 +14,7 @@ const sidebarItems = [
     { icon: Shield, label: 'Logs', href: '/admin/logs', roles: ['admin'] },
 
     { icon: Settings, label: 'Settings', href: '/admin/settings', roles: ['admin'] },
+    { icon: Users, label: 'Profile', href: '/profile', roles: ['student', 'instructor', 'admin'] },
 ];
 
 export function SidebarContent() {

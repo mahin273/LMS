@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "@/api/client";
@@ -46,11 +47,11 @@ export default function ProfilePage() {
     });
 
     // 2. Profile Update Form
-    const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors } } = useForm<ProfileFormValues>({
+    const { register: registerProfile, handleSubmit: handleSubmitProfile, formState: { errors: profileErrors }, reset: resetProfile } = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             name: user?.name || "",
-            bio: ""
+            bio: profileData?.bio || ""
         }
     });
 
@@ -60,12 +61,12 @@ export default function ProfilePage() {
     });
 
     // Update form default values when data loads
-    if (profileData && !profileErrors.name) {
-        // This effectively resets it every render if we don't check dirty, 
-        // but react-hook-form handles defaultValues update via reset() better in useEffect.
-        // For simplicity in this one-shot, we assume initial load.
-        // Better:
-    }
+    useEffect(() => {
+        if (profileData) {
+            // @ts-ignore
+            resetProfile({ name: profileData.name, bio: profileData.bio || "" });
+        }
+    }, [profileData, resetProfile]);
 
     // Mutation to update profile
     const updateProfileMutation = useMutation({
@@ -121,7 +122,7 @@ export default function ProfilePage() {
                     <CardContent className="pt-6 flex flex-col items-center text-center">
                         <div className="relative group mb-4">
                             <Avatar className="h-24 w-24 border-4 border-background shadow-xl">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name}`} />
+                                <AvatarImage src={profileData?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name}`} />
                                 <AvatarFallback>{user?.name?.[0]}</AvatarFallback>
                             </Avatar>
                             <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -177,7 +178,15 @@ export default function ProfilePage() {
                                             />
                                             <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
                                         </div>
-                                        {/* Bio field could be added here if backend supported it */}
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bio">Bio</Label>
+                                            <textarea
+                                                id="bio"
+                                                {...registerProfile("bio")}
+                                                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-muted/30 border-muted-foreground/20"
+                                                placeholder="Tell us a little about yourself"
+                                            />
+                                        </div>
                                         <div className="flex justify-end pt-4">
                                             <Button type="submit" disabled={updateProfileMutation.isPending}>
                                                 {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
