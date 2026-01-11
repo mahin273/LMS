@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, Trophy } from 'lucide-react';
+import { BookOpen, Trophy, CheckCircle, Clock } from 'lucide-react';
 
 export default function StudentDashboard() {
     const { data: courses, isLoading: isLoadingCourses } = useQuery({
@@ -54,6 +54,44 @@ export default function StudentDashboard() {
             </div>
 
             <Separator className="bg-border/50" />
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Enrolled</CardTitle>
+                        <BookOpen className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{courses?.length || 0}</div>
+                        <p className="text-xs text-muted-foreground">Active subscriptions</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Completed</CardTitle>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {courses ? courses.filter((c: any) => c.progress === 100).length : 0}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Courses finished</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+                        <Clock className="h-4 w-4 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {courses ? courses.filter((c: any) => c.progress < 100).length : 0}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Currently learning</p>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
