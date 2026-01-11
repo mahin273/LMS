@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import { Course, Enrollment, User, Badge, Lesson, LessonProgress } from '../models';
 
-interface AuthRequest extends Request {
-    user?: User;
-}
 
 export const getPublicCourses = async (req: Request, res: Response) => {
     try {
@@ -50,8 +47,8 @@ export const getPublicCourses = async (req: Request, res: Response) => {
     }
 };
 
-export const getEnrolledCourses = async (req: AuthRequest, res: Response) => {
-    const studentId = req.user?.id;
+export const getEnrolledCourses = async (req: Request, res: Response) => {
+    const studentId = (req as any).user?.id;
     try {
         const courses = await Course.findAll({
             include: [
@@ -99,8 +96,8 @@ export const getEnrolledCourses = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const getInstructorCourses = async (req: AuthRequest, res: Response) => {
-    const instructorId = req.user?.id;
+export const getInstructorCourses = async (req: Request, res: Response) => {
+    const instructorId = (req as any).user?.id;
     try {
         const courses = await Course.findAll({
             where: { instructorId },
@@ -129,8 +126,8 @@ export const getAllCoursesAdmin = async (req: Request, res: Response) => {
     }
 };
 
-export const createCourse = async (req: AuthRequest, res: Response) => {
-    const instructorId = req.user?.id;
+export const createCourse = async (req: Request, res: Response) => {
+    const instructorId = (req as any).user?.id;
     const { title, description } = req.body;
     try {
         const course = await Course.create({
@@ -145,8 +142,8 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const enrollCourse = async (req: AuthRequest, res: Response) => {
-    const studentId = req.user?.id;
+export const enrollCourse = async (req: Request, res: Response) => {
+    const studentId = (req as any).user?.id;
     const { courseId } = req.params;
     try {
         const [enrollment, created] = await Enrollment.findOrCreate({
@@ -163,8 +160,8 @@ export const enrollCourse = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const unenrollCourse = async (req: AuthRequest, res: Response) => {
-    const studentId = req.user?.id;
+export const unenrollCourse = async (req: Request, res: Response) => {
+    const studentId = (req as any).user?.id;
     const { courseId } = req.params;
     try {
         const deleted = await Enrollment.destroy({
@@ -181,8 +178,8 @@ export const unenrollCourse = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const rateCourse = async (req: AuthRequest, res: Response) => {
-    const studentId = req.user?.id;
+export const rateCourse = async (req: Request, res: Response) => {
+    const studentId = (req as any).user?.id;
     const { courseId } = req.params;
     const { rating, review } = req.body;
 
@@ -209,9 +206,9 @@ export const rateCourse = async (req: AuthRequest, res: Response) => {
     }
 }
 
-export const deleteCourse = async (req: AuthRequest, res: Response) => {
+export const deleteCourse = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const user = req.user;
+    const user = (req as any).user;
 
     try {
         const course = await Course.findByPk(id);
@@ -231,10 +228,10 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const updateCourse = async (req: AuthRequest, res: Response) => {
+export const updateCourse = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { title, description } = req.body;
-    const user = req.user;
+    const user = (req as any).user;
 
     try {
         const course = await Course.findByPk(id);
@@ -256,7 +253,7 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const getCourseAnalytics = async (req: AuthRequest, res: Response) => {
+export const getCourseAnalytics = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
         const course = await Course.findByPk(id, {
@@ -294,7 +291,7 @@ export const getCourseAnalytics = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const updateCourseStatus = async (req: AuthRequest, res: Response) => {
+export const updateCourseStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status } = req.body; // 'published' | 'rejected'
 
@@ -315,9 +312,9 @@ export const updateCourseStatus = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const submitCourse = async (req: AuthRequest, res: Response) => {
+export const submitCourse = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const instructorId = req.user?.id;
+    const instructorId = (req as any).user?.id;
 
     try {
         const course = await Course.findByPk(id);

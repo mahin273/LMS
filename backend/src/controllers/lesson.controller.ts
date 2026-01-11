@@ -3,14 +3,11 @@ import { Lesson, LessonProgress, Course, Enrollment } from '../models';
 import { GamificationService } from '../services/gamification.service';
 import { User } from '../models';
 
-interface AuthRequest extends Request {
-    user?: User;
-}
 
-export const getLessons = async (req: AuthRequest, res: Response) => {
+export const getLessons = async (req: Request, res: Response) => {
     const { courseId } = req.params;
-    const userId = req.user?.id;
-    const userRole = req.user?.role;
+    const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
 
     try {
 
@@ -118,14 +115,14 @@ export const updateLesson = async (req: Request, res: Response) => {
     }
 }
 
-export const completeLesson = async (req: AuthRequest, res: Response) => {
+export const completeLesson = async (req: Request, res: Response) => {
     const { lessonId } = req.params;
-    const studentId = req.user?.id;
+    const studentId = (req as any).user?.id;
 
     if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
-       
+
         const lesson = await Lesson.findByPk(lessonId);
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 

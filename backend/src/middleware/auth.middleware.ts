@@ -6,7 +6,7 @@ interface AuthRequest extends Request {
     user?: User;
 }
 
-export const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
@@ -22,7 +22,7 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
             return res.status(403).json({ error: 'User not found' });
         }
 
-        req.user = user;
+        (req as any).user = user;
         next();
     } catch (error) {
         return res.status(403).json({ error: 'Invalid token' });
@@ -30,8 +30,9 @@ export const authenticateToken = async (req: AuthRequest, res: Response, next: N
 };
 
 export const authorizeRoles = (...roles: string[]) => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const authReq = req as any as AuthRequest;
+        if (!authReq.user || !roles.includes(authReq.user.role)) {
             return res.status(403).json({ error: 'Insufficient permissions' });
         }
         next();

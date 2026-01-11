@@ -4,10 +4,13 @@ import sequelize from '../config/database';
 interface UserAttributes {
     id: string;
     email: string;
-    password_hash: string;
+    password_hash?: string;
     name: string;
     role: 'student' | 'instructor' | 'admin';
     status: 'active' | 'pending' | 'rejected';
+    googleId?: string;
+    magicLinkToken?: string;
+    magicLinkExpiresAt?: Date;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> { }
@@ -19,7 +22,9 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     public name!: string;
     public role!: 'student' | 'instructor' | 'admin';
     public status!: 'active' | 'pending' | 'rejected';
-    public password!: string;
+    public googleId!: string;
+    public magicLinkToken!: string;
+    public magicLinkExpiresAt!: Date;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -42,7 +47,7 @@ User.init(
         },
         password_hash: {
             type: DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
         },
         name: {
             type: DataTypes.STRING,
@@ -57,6 +62,19 @@ User.init(
             type: DataTypes.ENUM('active', 'pending', 'rejected'),
             allowNull: false,
             defaultValue: 'active',
+        },
+        googleId: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true,
+        },
+        magicLinkToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        magicLinkExpiresAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
         },
     },
     {

@@ -1,3 +1,5 @@
+console.log('Starting application...');
+import './config/env';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,16 +17,18 @@ import gamificationRoutes from './routes/gamification.routes';
 import { courseAssignmentRoutes, assignmentRoutes } from './routes/assignment.routes';
 import path from 'path';
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" } 
+    crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 app.use(cors());
 app.use(express.json());
+import './config/passport';
+import passport from 'passport';
+app.use(passport.initialize());
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

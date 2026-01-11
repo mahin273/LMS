@@ -43,15 +43,25 @@ export default function AdminDashboard() {
             <Separator className="bg-border/50" />
 
             {/* KPI Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                         <Users className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.counts?.users || '-'}</div>
-                        <p className="text-xs text-muted-foreground">Registered accounts</p>
+                        <div className="text-2xl font-bold">{stats?.counts?.students || '-'}</div>
+                        <p className="text-xs text-muted-foreground">Active learners</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Instructors</CardTitle>
+                        <Users className="h-4 w-4 text-secondary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.counts?.instructors || '-'}</div>
+                        <p className="text-xs text-muted-foreground">Course creators</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
@@ -74,6 +84,16 @@ export default function AdminDashboard() {
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                             <Database className="h-3 w-3" /> Ver: {stats?.dbVersion?.substring(0, 15)}...
                         </p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Student/Teacher Ratio</CardTitle>
+                        <Users className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.counts?.studentToInstructorRatio || '0'}:1</div>
+                        <p className="text-xs text-muted-foreground">Students per instructor</p>
                     </CardContent>
                 </Card>
             </div>

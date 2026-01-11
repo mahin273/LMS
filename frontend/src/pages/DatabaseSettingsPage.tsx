@@ -14,16 +14,34 @@ export default function DatabaseSettingsPage() {
         }
     });
 
-    const handleClearCache = () => {
-        // Mock action
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1000)),
-            {
-                loading: 'Clearing system cache...',
-                success: 'Cache cleared successfully',
-                error: 'Failed to clear cache'
-            }
-        );
+    const handleClearCache = async () => {
+        const promise = client.post('/admin/clear-cache');
+        toast.promise(promise, {
+            loading: 'Clearing system cache...',
+            success: 'Cache cleared successfully',
+            error: 'Failed to clear cache'
+        });
+    };
+
+    const handleResetDatabase = async () => {
+        if (!confirm('WARNING: This will completely WIPE the database and reset it to initial seed data. All current users and courses will be lost. Are you sure?')) {
+            return;
+        }
+
+        const promise = client.post('/admin/reset-db');
+
+        toast.promise(promise, {
+            loading: 'Resetting database... This may take a while.',
+            success: () => {
+                // Force logout as tokens are likely invalid
+                setTimeout(() => {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                }, 1500);
+                return 'Database reset successfully. Redirecting...';
+            },
+            error: 'Failed to reset database'
+        });
     };
 
     return (
@@ -58,7 +76,7 @@ export default function DatabaseSettingsPage() {
                         <CardDescription>Perform administrative tasks on the database.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex gap-4">
-                        <Button variant="destructive">Reset Seed Data (Disabled)</Button>
+                        <Button variant="destructive" onClick={handleResetDatabase}>Reset Seed Data</Button>
                         <Button variant="outline" onClick={handleClearCache}>Clear Query Cache</Button>
                     </CardContent>
                 </Card>
