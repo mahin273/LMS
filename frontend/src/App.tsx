@@ -84,7 +84,7 @@ function App() {
               } />
 
               <Route path="/courses/:courseId" element={
-                <RoleRoute requiredRole={["student", "admin"]}>
+                <RoleRoute requiredRole={["student", "admin", "instructor"]}>
                   <CourseAccessGuard />
                 </RoleRoute>
               } />

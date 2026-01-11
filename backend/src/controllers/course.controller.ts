@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Course, Enrollment, User, Badge, Lesson, LessonProgress } from '../models';
+import { Course, Enrollment, User, Badge, Lesson, LessonProgress, Assignment, Submission } from '../models';
 
 
 export const getPublicCourses = async (req: Request, res: Response) => {
@@ -330,5 +330,140 @@ export const submitCourse = async (req: Request, res: Response) => {
         res.json({ message: 'Course submitted for approval', course });
     } catch (error) {
         res.status(500).json({ error: 'Failed to submit course' });
+    }
+};
+
+export const getInstructorStats = async (req: Request, res: Response) => {
+    const instructorId = (req as any).user?.id;
+    try {
+        // 1. Get all courses owned by instructor
+        const courses = await Course.findAll({
+            where: { instructorId },
+            include: [
+                {
+                    model: User,
+                    as: 'students',
+                    through: { attributes: ['rating', 'joinedAt'] }
+                },
+                {
+                    model: Assignment,
+                    as: 'assignments',
+                    include: [{ model: Submission, as: 'submissions' }]
+                }
+            ]
+        });
+
+        // 2. Calculate quick stats
+        const totalCourses = courses.length;
+
+        const allStudents = courses.flatMap(c => c.students || []);
+        // Unique students count
+        const uniqueStudentIds = new Set(allStudents.map((s: any) => s.id));
+        const totalStudents = uniqueStudentIds.size;
+
+        // Pending Grading
+        // Logic: Submissions where grade is null
+        let pendingGrading = 0;
+        let recentSubmissions: any[] = [];
+
+        courses.forEach((course: any) => {
+            if (course.assignments) {
+                course.assignments.forEach((assignment: any) => {
+                    if (assignment.submissions) {
+                        assignment.submissions.forEach((sub: any) => {
+                            if (sub.grade === null) {
+                                pendingGrading++;
+                            }
+                            recentSubmissions.push({
+                                type: 'submission',
+                                courseTitle: course.title,
+                                assignmentTitle: assignment.title,
+                                studentId: sub.studentId,
+                                submittedAt: sub.submittedAt
+                            });
+                        });
+                    }
+                });
+            }
+        });
+
+        // Average Rating
+        const ratings = allStudents
+            .map((s: any) => s.Enrollment.rating)
+            .filter((r: number) => r); // Filter out null/undefined
+
+        const avgRating = ratings.length > 0
+            ? (ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length).toFixed(1)
+            : 0;
+
+        // 3. Recent Activity (Enrollments + Submissions)
+        const recentEnrollments = allStudents.map((s: any) => ({
+            type: 'enrollment',
+            courseTitle: courses.find(c => c.students?.some((st: any) => st.id === s.id))?.title,
+            studentName: s.name,
+            createdAt: s.Enrollment.joinedAt
+        }));
+
+        // We need to fetch student names for submissions efficiently
+        // For now, let's just return what we have or do a separate fetch if critical.
+        // Or better, include student in the submission include.
+        // Optimized approach:
+        // Actually, let's simplify. The loop above is synchronous.
+        // Let's rely on frontend to display generic "Student" or fetch names if needed for feeds.
+        // Actually for a proper feed "John Doe submitted...", we need the name.
+
+        // Re-fetching specific submission details to get student names might be cleaner
+        // but let's try to map it from known students if possible.
+        // Ideally, we should include Student model in the Assignment->Submission include.
+
+        const activityFeed = [...recentEnrollments, ...recentSubmissions]
+            .sort((a, b) => new Date(b.createdAt || b.submittedAt).getTime() - new Date(a.createdAt || a.submittedAt).getTime())
+            .slice(0, 10)
+            .map((item: any) => {
+                // Try to resolve student name for submissions from the allStudents list if possible
+                let studentName = item.studentName || 'Student';
+                if (item.type === 'submission') {
+                    const student = allStudents.find((s: any) => s.id === item.studentId);
+                    if (student) studentName = student.name;
+                }
+                return { ...item, studentName };
+            });
+
+
+        // 4. Enrollment Analytics (Last 7 days)
+        const last7Days: any = {};
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            last7Days[dateStr] = 0;
+        }
+
+        allStudents.forEach((student: any) => {
+            const dateStr = new Date(student.Enrollment.joinedAt).toISOString().split('T')[0];
+            if (last7Days[dateStr] !== undefined) {
+                last7Days[dateStr]++;
+            }
+        });
+
+        const chartData = Object.keys(last7Days).map(date => ({
+            name: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
+            date,
+            students: last7Days[date]
+        }));
+
+        res.json({
+            totalStudents,
+            totalCourses,
+            pendingGrading,
+            avgRating,
+            activityFeed,
+            chartData
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to fetch instructor stats' });
     }
 };

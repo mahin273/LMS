@@ -12,6 +12,7 @@ import {
     getCourseAnalytics,
     updateCourseStatus,
     submitCourse,
+    getInstructorStats,
     getAllCoursesAdmin
 } from '../controllers/course.controller';
 import { getLessons, createLesson } from '../controllers/lesson.controller';
@@ -29,6 +30,7 @@ router.delete('/:courseId/enroll', authenticateToken, authorizeRoles('student'),
 router.post('/:courseId/rate', authenticateToken, authorizeRoles('student'), rateCourse);
 
 // Instructor
+router.get('/instructor/stats', authenticateToken, authorizeRoles('instructor'), getInstructorStats);
 router.get('/instructor', authenticateToken, authorizeRoles('instructor'), getInstructorCourses);
 router.post('/', authenticateToken, authorizeRoles('instructor'), createCourse);
 router.put('/:id', authenticateToken, authorizeRoles('instructor', 'admin'), updateCourse);

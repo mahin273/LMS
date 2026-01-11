@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 });
 
 const startServer = async () => {
-    let retries = 10;
+    let retries = 30; // Retry count increased to 30
     while (retries > 0) {
         try {
             await sequelize.authenticate();
