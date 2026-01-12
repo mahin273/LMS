@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import logo from '@/assets/logo.png';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { LayoutDashboard, BookOpen, Trophy, Settings, Shield, LogOut, GraduationCap, Users } from 'lucide-react';
@@ -31,9 +32,7 @@ export function SidebarContent() {
         <div className="flex flex-col h-full">
             <div className="px-6 py-4">
                 <Link to="/" className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="text-primary-foreground font-bold">L</span>
-                    </div>
+                    <img src={logo} alt="LMS Logo" className="h-8 w-8 object-contain" />
                     <span className="text-xl font-bold tracking-tight">LMS</span>
                 </Link>
             </div>

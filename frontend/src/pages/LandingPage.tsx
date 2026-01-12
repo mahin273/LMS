@@ -1,11 +1,15 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import client from '@/api/client';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Star, BookOpen, Users } from 'lucide-react';
+
+import logo from '@/assets/logo.png';
+import landingImage from '@/assets/Landing_page.png';
+import { ModeToggle } from '@/components/mode-toggle';
 
 export default function LandingPage() {
     const { data: courses, isLoading } = useQuery({
@@ -16,63 +20,145 @@ export default function LandingPage() {
         }
     });
 
+    const containerVariants: Variants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.2,
+                delayChildren: 0.3,
+            }
+        }
+    };
+
+    const itemVariants: Variants = {
+        hidden: { opacity: 0, y: 30 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { type: "spring", stiffness: 50, damping: 20 }
+        }
+    };
+
+    const floatVariants: Variants = {
+        animate: {
+            y: [0, -20, 0] as any,
+            rotate: [0, 1, -1, 0] as any,
+            transition: {
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+            }
+        }
+    };
+
     const featuredCourses = courses?.slice(0, 3);
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <div className="min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden">
             {/* Navbar */}
-            <header className="border-b sticky top-0 bg-background/95 backdrop-blur z-50">
+            <header className="border-b sticky top-0 bg-background/80 backdrop-blur-md z-50 transition-all duration-300">
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {/* Simple Logo Placeholder */}
-                        <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-                            LMS
-                        </div>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2"
+                    >
+                        <img src={logo} alt="LMS Logo" className="h-8 w-8 object-contain" />
                         <span className="text-xl font-bold tracking-tight">LearnPortal</span>
-                    </div>
-                    <div className="flex gap-4">
+                    </motion.div>
+
+
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex gap-4 items-center"
+                    >
                         <Link to="/login">
                             <Button variant="ghost">Login</Button>
                         </Link>
                         <Link to="/register">
                             <Button>Sign Up</Button>
                         </Link>
-                    </div>
+                        <ModeToggle />
+                    </motion.div>
                 </div>
             </header>
 
             {/* Hero Section */}
             <main className="flex-1">
-                <section className="py-20 md:py-32 px-4">
-                    <div className="container mx-auto text-center max-w-3xl">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6"
-                        >
-                            Master New Skills with <span className="text-primary">Ease</span>
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.2 }}
-                            className="text-lg md:text-xl text-muted-foreground mb-8 text-balance"
-                        >
-                            An intuitive Learning Management System designed for students and modern educators. Track progress, earn badges, and excel in your studies.
-                        </motion.p>
+                <section className="py-20 md:py-32 px-4 relative overflow-hidden">
+                    {/* Background Elements */}
+                    <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden">
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.4 }}
-                            className="flex flex-col sm:flex-row gap-4 justify-center"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
+                            className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] bg-primary/5 rounded-full blur-[100px]"
+                        />
+                        <motion.div
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                            className="absolute top-[40%] -left-[10%] w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[80px]"
+                        />
+                    </div>
+
+                    <div className="container mx-auto grid md:grid-cols-2 gap-12 items-center">
+                        <motion.div
+                            className="text-center md:text-left z-10"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
                         >
-                            <Link to="/register">
-                                <Button size="lg" className="w-full sm:w-auto text-lg px-8">Get Started</Button>
-                            </Link>
-                            <Link to="/courses">
-                                <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8">Browse Courses</Button>
-                            </Link>
+                            <motion.h1
+                                variants={itemVariants}
+                                className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight"
+                            >
+                                Master New Skills with <br />
+                                <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+                                    Magic & Ease
+                                </span>
+                            </motion.h1>
+                            <motion.p
+                                variants={itemVariants}
+                                className="text-lg md:text-xl text-muted-foreground mb-8 text-balance"
+                            >
+                                An intuitive Learning Management System designed for students and modern educators. Track progress, earn badges, and excel in your studies.
+                            </motion.p>
+                            <motion.div
+                                variants={itemVariants}
+                                className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start"
+                            >
+                                <Link to="/register">
+                                    <Button size="lg" className="w-full sm:w-auto text-lg px-8 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
+                                        Get Started
+                                    </Button>
+                                </Link>
+                                <Link to="/courses">
+                                    <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg px-8">
+                                        Browse Courses
+                                    </Button>
+                                </Link>
+                            </motion.div>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.8 }}
+                            className="relative z-10"
+                        >
+                            <motion.div
+                                variants={floatVariants}
+                                animate="animate"
+                                whileHover={{ scale: 1.05 }}
+                                className="relative"
+                            >
+                                <img
+                                    src={landingImage}
+                                    alt="Dashboard Preview"
+                                    className="w-full object-cover drop-shadow-2xl"
+                                />
+                            </motion.div>
                         </motion.div>
                     </div>
                 </section>
@@ -116,40 +202,43 @@ export default function LandingPage() {
                                 {featuredCourses?.map((course: any, index: number) => (
                                     <motion.div
                                         key={course.id}
-                                        initial={{ opacity: 0, y: 20 }}
+                                        initial={{ opacity: 0, y: 40 }}
                                         whileInView={{ opacity: 1, y: 0 }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                                        viewport={{ once: true, margin: "-50px" }}
+                                        transition={{ duration: 0.5, delay: index * 0.15 }}
+                                        whileHover={{ y: -8 }}
                                     >
-                                        <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                                        <Card className="h-full flex flex-col hover:shadow-2xl hover:shadow-primary/10 transition-all duration-300 border-border/50 bg-card/50 backdrop-blur-sm">
                                             <CardHeader>
                                                 <div className="flex justify-between items-start mb-2">
-                                                    <Badge variant="secondary" className="mb-2">
+                                                    <Badge variant="secondary" className="mb-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                                                         {course.category || 'General'}
                                                     </Badge>
-                                                    <div className="flex items-center text-yellow-500 text-sm font-medium">
-                                                        <Star className="h-4 w-4 fill-current mr-1" />
+                                                    <div className="flex items-center text-amber-500 text-sm font-bold bg-amber-500/10 px-2 py-1 rounded-full">
+                                                        <Star className="h-3 w-3 fill-current mr-1" />
                                                         {course.averageRating ? Number(course.averageRating).toFixed(1) : 'New'}
                                                     </div>
                                                 </div>
-                                                <CardTitle className="line-clamp-2">{course.title}</CardTitle>
+                                                <CardTitle className="line-clamp-2 text-lg group-hover:text-primary transition-colors">{course.title}</CardTitle>
                                                 <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                                             </CardHeader>
                                             <CardContent className="flex-1">
                                                 <div className="flex items-center text-sm text-muted-foreground gap-4 mt-2">
-                                                    <div className="flex items-center">
-                                                        <Users className="h-4 w-4 mr-1" />
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Users className="h-4 w-4 text-primary/70" />
                                                         {course.enrollmentCount || 0} students
                                                     </div>
-                                                    <div className="flex items-center">
-                                                        <BookOpen className="h-4 w-4 mr-1" />
+                                                    <div className="flex items-center gap-1.5">
+                                                        <BookOpen className="h-4 w-4 text-primary/70" />
                                                         {course.lessonsCount || 0} lessons
                                                     </div>
                                                 </div>
                                             </CardContent>
                                             <CardFooter>
                                                 <Link to={`/courses/${course.id}`} className="w-full">
-                                                    <Button className="w-full">View Course</Button>
+                                                    <Button className="w-full shadow-lg shadow-primary/20 hover:shadow-primary/40 group">
+                                                        View Course
+                                                    </Button>
                                                 </Link>
                                             </CardFooter>
                                         </Card>
@@ -218,14 +307,20 @@ export default function LandingPage() {
 function FeatureCard({ title, description, delay }: { title: string, description: string, delay: number }) {
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay }}
-            className="p-6 rounded-xl bg-card border shadow-sm"
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, delay, type: "spring", stiffness: 50 }}
+            whileHover={{ y: -10, transition: { duration: 0.2 } }}
+            className="p-6 rounded-2xl bg-card border shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
         >
-            <h3 className="text-xl font-semibold mb-2">{title}</h3>
-            <p className="text-muted-foreground">{description}</p>
+            <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 text-primary">
+                {title.includes("Interactive") ? <BookOpen className="h-6 w-6" /> :
+                    title.includes("Track") ? <Users className="h-6 w-6" /> :
+                        <Star className="h-6 w-6" />}
+            </div>
+            <h3 className="text-xl font-bold mb-3">{title}</h3>
+            <p className="text-muted-foreground leading-relaxed">{description}</p>
         </motion.div>
     );
 }

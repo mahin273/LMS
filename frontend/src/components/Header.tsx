@@ -2,6 +2,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { SidebarContent } from "./Sidebar";
+import { ModeToggle } from "./mode-toggle";
 
 export function Header() {
     return (
@@ -17,9 +18,11 @@ export function Header() {
                     <SidebarContent />
                 </SheetContent>
             </Sheet>
+
             <div className="w-full flex-1">
                 <span className="font-bold">LMS</span>
             </div>
+            <ModeToggle />
         </header>
     );
 }
