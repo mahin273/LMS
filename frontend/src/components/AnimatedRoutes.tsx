@@ -3,6 +3,8 @@ import { AnimatePresence } from 'framer-motion';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import AuthCallback from '../pages/AuthCallback';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/ResetPasswordPage';
 import Dashboard from '../pages/Dashboard';
 import CreateCoursePage from '../pages/CreateCoursePage';
 import EditCoursePage from '../pages/EditCoursePage';
@@ -66,6 +68,8 @@ export default function AnimatedRoutes() {
                 <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
                 <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/forgot-password" element={<PageTransition><ForgotPasswordPage /></PageTransition>} />
+                <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
 
                 {/* Protected Layout Routes */}
                 <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

@@ -3,6 +3,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { User } from '../models';
 import { registerSchema, loginSchema } from '../utils/validation';
+import { Op } from 'sequelize';
+import crypto from 'crypto';
+import { sendEmail } from '../utils/email.service';
 
 export const register = async (req: Request, res: Response) => {
     try {
@@ -111,11 +114,6 @@ export const googleCallback = async (req: Request, res: Response) => {
     }
 };
 
-// Magic Link
-import crypto from 'crypto';
-import { sendEmail } from '../utils/email.service';
-import { Op } from 'sequelize';
-
 export const sendMagicLink = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
@@ -125,8 +123,6 @@ export const sendMagicLink = async (req: Request, res: Response) => {
 
         if (!user) {
             // Option: Auto-register or return error. 
-            // For now, auto-register as pending/student if not found, or maybe just error to prevent spam?
-            // Let's create a new user with random password/setup
             user = await User.create({
                 email,
                 name: email.split('@')[0], // Default name
@@ -187,6 +183,67 @@ export const verifyMagicLink = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Verify magic link error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+        user.resetPasswordToken = token;
+        user.resetPasswordExpiresAt = expiresAt;
+        await user.save();
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const link = `${frontendUrl}/reset-password?token=${token}&email=${email}`;
+
+        await sendEmail(email, 'Reset Your Password', `<p>Click <a href="${link}">here</a> to reset your password.</p>`);
+
+        res.json({ message: 'Password reset link sent' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const { token, email, password } = req.body;
+        if (!token || !email || !password) return res.status(400).json({ error: 'Missing required fields' });
+
+        const user = await User.findOne({
+            where: {
+                email,
+                resetPasswordToken: token,
+                resetPasswordExpiresAt: {
+                    [Op.gt]: new Date()
+                }
+            }
+        });
+
+        if (!user) {
+            return res.status(400).json({ error: 'Invalid or expired token' });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
+        user.password_hash = passwordHash;
+        user.resetPasswordToken = null as any;
+        user.resetPasswordExpiresAt = null as any;
+        await user.save();
+
+        res.json({ message: 'Password reset successful' });
+    } catch (error) {
+        console.error('Reset password error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

@@ -11,6 +11,8 @@ interface UserAttributes {
     googleId?: string;
     magicLinkToken?: string;
     magicLinkExpiresAt?: Date;
+    resetPasswordToken?: string;
+    resetPasswordExpiresAt?: Date;
     bio?: string;
     avatarUrl?: string;
 }
@@ -27,6 +29,8 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     public googleId!: string;
     public magicLinkToken!: string;
     public magicLinkExpiresAt!: Date;
+    public resetPasswordToken!: string;
+    public resetPasswordExpiresAt!: Date;
     public bio!: string;
     public avatarUrl!: string;
 
@@ -77,6 +81,14 @@ User.init(
             allowNull: true,
         },
         magicLinkExpiresAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        resetPasswordToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        resetPasswordExpiresAt: {
             type: DataTypes.DATE,
             allowNull: true,
         },

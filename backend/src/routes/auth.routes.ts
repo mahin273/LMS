@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getMe, googleCallback, sendMagicLink, verifyMagicLink } from '../controllers/auth.controller';
+import { register, login, getMe, googleCallback, sendMagicLink, verifyMagicLink, forgotPassword, resetPassword } from '../controllers/auth.controller';
 import passport from 'passport';
 
 import { authenticateToken } from '../middleware/auth.middleware';
@@ -17,5 +17,10 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
 // Magic Link
 router.post('/magic-link', sendMagicLink);
 router.get('/magic-link/verify', verifyMagicLink);
+
+
+// Forgot Password
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;
