@@ -9,3 +9,4 @@ uploads
 *.log
 logs.txt
 frontend_logs.txt
+build_log*.txt
