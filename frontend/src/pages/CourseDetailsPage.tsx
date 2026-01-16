@@ -146,7 +146,9 @@ export default function CourseDetailsPage() {
                                         </Button>
                                     ) : (
                                         <Button variant="secondary" className="w-full h-12" disabled>
-                                            {user?.role === 'instructor' ? 'Instructors cannot enroll' : 'Log in as Student to Enroll'}
+                                            {user?.role === 'instructor' ? 'Instructors cannot enroll' :
+                                                user?.role === 'admin' ? 'Admins cannot enroll' :
+                                                    'Log in as Student to Enroll'}
                                         </Button>
                                     )}
 

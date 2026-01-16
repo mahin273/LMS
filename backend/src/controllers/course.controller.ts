@@ -4,25 +4,37 @@ import { Course, Enrollment, User, Badge, Lesson, LessonProgress, Assignment, Su
 
 export const getPublicCourses = async (req: Request, res: Response) => {
     try {
-        const courses = await Course.findAll({
-            where: { status: 'published' },
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 12;
+        const offset = (page - 1) * limit;
+        const search = req.query.search as string || '';
+
+        const whereClause: any = { status: 'published' };
+        if (search) {
+            whereClause.title = { [require('sequelize').Op.like]: `%${search}%` };
+        }
+
+        const { count, rows: courses } = await Course.findAndCountAll({
+            where: whereClause,
             include: [
                 { model: User, as: 'instructor', attributes: ['name'] },
                 {
                     model: User,
                     as: 'students',
-                    attributes: ['id'], // We just need IDs to count or use Sequelize.fn
+                    attributes: ['id'],
                     through: { attributes: ['rating'] }
                 }
-            ]
+            ],
+            limit,
+            offset,
+            distinct: true
         });
 
         // Calculate stats manually for now to avoid Group By complexify
         const coursesWithStats = courses.map((course: any) => {
             const enrollments = course.students || [];
-            const count = enrollments.length;
+            const studentCount = enrollments.length;
 
-            // Filter out null ratings
             const ratings = enrollments
                 .map((s: any) => s.Enrollment?.rating)
                 .filter((r: any) => r);
@@ -33,14 +45,21 @@ export const getPublicCourses = async (req: Request, res: Response) => {
 
             return {
                 ...course.toJSON(),
-                studentCount: count,
+                studentCount,
                 averageRating: avg ? parseFloat(avg) : null,
-                // Clean up students array to not expose all IDs publicly if unwanted
                 students: undefined
             };
         });
 
-        res.json(coursesWithStats);
+        res.json({
+            courses: coursesWithStats,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit)
+            }
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch courses' });
@@ -114,13 +133,41 @@ export const getInstructorCourses = async (req: Request, res: Response) => {
 
 export const getAllCoursesAdmin = async (req: Request, res: Response) => {
     try {
-        const courses = await Course.findAll({
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 20;
+        const offset = (page - 1) * limit;
+        const search = req.query.search as string || '';
+        const status = req.query.status as string || '';
+
+        const whereClause: any = {};
+        if (search) {
+            whereClause.title = { [require('sequelize').Op.like]: `%${search}%` };
+        }
+        if (status) {
+            whereClause.status = status;
+        }
+
+        const { count, rows: courses } = await Course.findAndCountAll({
+            where: whereClause,
             include: [
                 { model: User, as: 'instructor', attributes: ['name', 'email'] },
                 { model: User, as: 'students', attributes: ['id'] }
-            ]
+            ],
+            limit,
+            offset,
+            distinct: true,
+            order: [['createdAt', 'DESC']]
         });
-        res.json(courses);
+
+        res.json({
+            courses,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit)
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch all courses' });
     }

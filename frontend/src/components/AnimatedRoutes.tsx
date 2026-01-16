@@ -37,6 +37,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function CourseAccessGuard() {
     const { courseId } = useParams();
+    const user = getPayload();
 
     const { data: enrolledCourses, isLoading } = useQuery({
         queryKey: ['enrolled-courses'],
@@ -44,15 +45,20 @@ function CourseAccessGuard() {
             const res = await client.get('/courses/enrolled');
             return res.data;
         },
-        retry: false
+        retry: false,
+        enabled: user?.role === 'student' // Only fetch for students
     });
 
-    if (isLoading) return <div>Loading access rights...</div>;
+    if (isLoading && user?.role === 'student') return <div>Loading access rights...</div>;
+
+    // Admin and Instructor can always view full course content
+    if (user?.role === 'admin' || user?.role === 'instructor') {
+        return <CoursePlayerPage />;
+    }
 
     const isEnrolled = enrolledCourses?.some((c: any) => c.id === courseId);
-    const user = getPayload();
 
-    if (isEnrolled || user?.role === 'admin') {
+    if (isEnrolled) {
         return <CoursePlayerPage />;
     } else {
         return <CourseDetailsPage />;

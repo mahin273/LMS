@@ -6,27 +6,44 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Search, SlidersHorizontal, BookOpen } from 'lucide-react';
+import { Search, SlidersHorizontal, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { useDebounce } from '@/hooks/useDebounce';
+
+interface PaginatedResponse {
+    courses: any[];
+    pagination: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
+}
 
 export default function CoursesPage() {
     const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const limit = 12;
+    const debouncedSearch = useDebounce(search, 500);
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    const { data: courses, isLoading } = useQuery({
-        queryKey: ['public-courses'],
+    const { data, isLoading } = useQuery<PaginatedResponse>({
+        queryKey: ['public-courses', debouncedSearch, page],
         queryFn: async () => {
-            const res = await client.get('/courses');
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: limit.toString(),
+                ...(debouncedSearch && { search: debouncedSearch })
+            });
+            const res = await client.get(`/courses?${params}`);
             return res.data;
         }
     });
 
-    const filteredCourses = courses?.filter((c: any) =>
-        c.title.toLowerCase().includes(search.toLowerCase()) ||
-        c.description.toLowerCase().includes(search.toLowerCase())
-    );
+    const courses = data?.courses || [];
+    const pagination = data?.pagination;
 
     return (
         <div className="container mx-auto px-4 py-8 space-y-8 animate-in fade-in-50 slide-in-from-bottom-5 duration-500">
@@ -48,7 +65,7 @@ export default function CoursesPage() {
                             placeholder="Search courses..."
                             className="pl-10 bg-background/50 border-input/50 focus:bg-background transition-all"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                         />
                     </div>
                     <Button variant="outline" size="icon" className="shrink-0">
@@ -67,7 +84,7 @@ export default function CoursesPage() {
                 </div>
             ) : (
                 <div className="min-h-[50vh]">
-                    {filteredCourses?.length === 0 ? (
+                    {courses.length === 0 ? (
                         <Card className="border-dashed border-2 bg-muted/10 mt-12">
                             <CardContent className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
                                 <div className="p-4 rounded-full bg-muted mb-4">
@@ -83,11 +100,40 @@ export default function CoursesPage() {
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredCourses?.map((course: any) => (
-                                <CourseCard key={course.id} course={course} isEnrolled={false} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {courses.map((course: any) => (
+                                    <CourseCard key={course.id} course={course} isEnrolled={false} />
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {pagination && pagination.totalPages > 1 && (
+                                <div className="flex items-center justify-center mt-8 gap-4">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                                        disabled={page === 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Previous
+                                    </Button>
+                                    <span className="text-sm text-muted-foreground">
+                                        Page {page} of {pagination.totalPages} ({pagination.total} courses)
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                                        disabled={page === pagination.totalPages}
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             )}

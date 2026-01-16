@@ -5,10 +5,15 @@ import { User, Badge, LessonProgress, Course, Assignment, Enrollment } from '../
 import { Op } from 'sequelize';
 
 export const getAllUsers = async (req: Request, res: Response) => {
-    const { role, search } = req.query;
+    const { role, search, status, page = '1', limit = '10' } = req.query;
     try {
+        const pageNum = parseInt(page as string) || 1;
+        const limitNum = parseInt(limit as string) || 10;
+        const offset = (pageNum - 1) * limitNum;
+
         const whereClause: any = {};
         if (role) whereClause.role = role;
+        if (status) whereClause.status = status;
 
         if (search) {
             whereClause[Op.or] = [
@@ -17,11 +22,23 @@ export const getAllUsers = async (req: Request, res: Response) => {
             ];
         }
 
-        const users = await User.findAll({
+        const { count, rows: users } = await User.findAndCountAll({
             where: whereClause,
-            attributes: ['id', 'name', 'email', 'role', 'status', 'createdAt']
+            attributes: ['id', 'name', 'email', 'role', 'status', 'createdAt'],
+            limit: limitNum,
+            offset,
+            order: [['createdAt', 'DESC']]
         });
-        res.json(users);
+
+        res.json({
+            users,
+            pagination: {
+                total: count,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(count / limitNum)
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch users' });
     }
