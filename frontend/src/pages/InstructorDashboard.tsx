@@ -14,8 +14,8 @@ export default function InstructorDashboard() {
     const { data: courses, isLoading: isLoadingCourses } = useQuery({
         queryKey: ['instructor-courses'],
         queryFn: async () => {
-            const res = await client.get('/courses/instructor');
-            return res.data;
+            const res = await client.get('/courses/instructor?limit=4');
+            return res.data.courses; // Backend now returns { courses: [], pagination: ... }
         }
     });
 
@@ -152,13 +152,11 @@ export default function InstructorDashboard() {
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold flex items-center gap-2">
                             <BookOpen className="h-5 w-5 text-primary" />
-                            Managed Courses
+                            Recent Courses
                         </h2>
-                        {courses?.length > 0 && (
-                            <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
-                                {courses.length} Total
-                            </span>
-                        )}
+                        <Link to="/instructor/courses" className="text-sm text-primary hover:underline flex items-center">
+                            View All <Users className="ml-1 h-3 w-3" />
+                        </Link>
                     </div>
 
                     {(!courses || courses.length === 0) ? (

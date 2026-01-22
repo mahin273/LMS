@@ -84,7 +84,7 @@ export const getProfile = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     // @ts-ignore
     const userId = req.user?.id;
-    const { name, password, bio, avatarUrl } = req.body;
+    const { name, password, currentPassword, bio, avatarUrl } = req.body;
 
     try {
         const user = await User.findByPk(userId);
@@ -94,7 +94,18 @@ export const updateProfile = async (req: Request, res: Response) => {
         if (bio !== undefined) user.bio = bio;
         if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
 
+        // Password change requires current password verification
         if (password) {
+            if (!currentPassword) {
+                return res.status(400).json({ error: 'Current password is required to change password' });
+            }
+
+            // Verify current password
+            const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+            if (!isValidPassword) {
+                return res.status(401).json({ error: 'Current password is incorrect' });
+            }
+
             const hashedPassword = await bcrypt.hash(password, 10);
             user.password_hash = hashedPassword;
         }

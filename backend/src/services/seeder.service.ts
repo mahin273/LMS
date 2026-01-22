@@ -182,14 +182,33 @@ export const seedDatabase = async (forceRewrite = true) => {
                         }
                     }
 
-                    // 10. Award Badges (if course completed)
-                    if (lessonsCompletedCount === courseLessons.length) {
-                        await Badge.create({
-                            studentId: student.id,
-                            courseId: course.id,
-                            type: 'GOLD',
-                            awardedAt: new Date()
-                        });
+                    // 10. Award Badges based on progress milestones
+                    const progressPercent = (lessonsCompletedCount / courseLessons.length) * 100;
+                    
+                    const milestones = [
+                        { type: 'BRONZE', threshold: 25 },
+                        { type: 'SILVER', threshold: 50 },
+                        { type: 'GOLD', threshold: 90 },
+                        { type: 'MASTER', threshold: 100 },
+                    ];
+
+                    for (const milestone of milestones) {
+                        if (progressPercent >= milestone.threshold) {
+                            await Badge.create({
+                                studentId: student.id,
+                                courseId: course.id,
+                                type: milestone.type as any,
+                                awardedAt: new Date()
+                            });
+                        }
+                    }
+
+                    // 11. Update enrollment status if completed
+                    if (progressPercent === 100) {
+                        await Enrollment.update(
+                            { status: 'completed' },
+                            { where: { studentId: student.id, courseId: course.id } }
+                        );
                     }
                 }
             }

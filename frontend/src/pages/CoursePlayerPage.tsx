@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
 import client from '@/api/client';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
@@ -43,8 +44,14 @@ function RateCourseForm({ courseId, onSuccess }: { courseId: string, onSuccess?:
             queryClient.invalidateQueries({ queryKey: ['course-details'] });
             onSuccess?.();
         },
-        onError: () => {
-            toast.error("Failed to submit rating");
+        onError: (error: any) => {
+            const message = error.response?.data?.error || "Failed to submit rating";
+            const progress = error.response?.data?.currentProgress;
+            if (progress !== undefined) {
+                toast.error(`${message}. Your progress: ${progress}%`);
+            } else {
+                toast.error(message);
+            }
         }
     });
 
@@ -62,6 +69,9 @@ function RateCourseForm({ courseId, onSuccess }: { courseId: string, onSuccess?:
                     </button>
                 ))}
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+                You must complete at least 50% of the course to rate it
+            </p>
             <div className="space-y-2">
                 <Label>Write a Review (Optional)</Label>
                 <Textarea
@@ -127,9 +137,30 @@ export default function CoursePlayerPage() {
         mutationFn: async (id: string) => {
             return client.post(`/lessons/${id}/complete`);
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
+            const data = response.data;
             toast.success("Lesson Completed!");
+
+            // Show badge notifications if new badges were earned
+            if (data.newBadges && data.newBadges.length > 0) {
+                data.newBadges.forEach((badge: string) => {
+                    const badgeNames: Record<string, string> = {
+                        'BRONZE': '🥉 Bronze Scholar',
+                        'SILVER': '🥈 Silver Achiever',
+                        'GOLD': '🥇 Gold Master',
+                        'MASTER': '👑 Grand Master'
+                    };
+                    toast.success(`🎉 Badge Unlocked: ${badgeNames[badge] || badge}!`, {
+                        duration: 5000,
+                        description: `You've earned a new achievement!`
+                    });
+                });
+                // Invalidate profile to update badges display
+                queryClient.invalidateQueries({ queryKey: ['profile'] });
+            }
+
             queryClient.invalidateQueries({ queryKey: ['course-content', courseId] });
+            queryClient.invalidateQueries({ queryKey: ['enrolled-courses'] });
         }
     });
 
@@ -272,9 +303,9 @@ export default function CoursePlayerPage() {
                                             <Card className="border-border/50 bg-card/40 backdrop-blur-sm">
                                                 <CardContent className="pt-6">
                                                     <div className="prose dark:prose-invert max-w-none text-muted-foreground leading-relaxed">
-                                                        <div className="whitespace-pre-wrap font-sans">
+                                                        <ReactMarkdown>
                                                             {activeItem.content || "No content provided for this lesson."}
-                                                        </div>
+                                                        </ReactMarkdown>
                                                     </div>
                                                 </CardContent>
                                             </Card>

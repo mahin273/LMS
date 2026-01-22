@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Loader2, Lock, Mail, Chrome, Wand2 } from 'lucide-react'
+import { Loader2, Lock, Mail, Chrome, Wand2, ArrowLeft } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner' // Assuming sonner is installed
 import logo from '@/assets/logo.png';
@@ -114,6 +114,13 @@ export default function LoginPage() {
                     className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-secondary/10 blur-[120px]"
                 />
             </div>
+
+            <Link to="/" className="absolute top-4 left-4 md:top-8 md:left-8 z-50">
+                <Button variant="ghost" className="gap-2 group">
+                    <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                    Back to Home
+                </Button>
+            </Link>
 
             <motion.div
                 variants={cardVariants}

@@ -13,7 +13,9 @@ import {
     updateCourseStatus,
     submitCourse,
     getInstructorStats,
-    getAllCoursesAdmin
+    getCourseById,
+    getAllCoursesAdmin,
+    bulkCourseAction
 } from '../controllers/course.controller';
 import { getLessons, createLesson } from '../controllers/lesson.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -29,6 +31,8 @@ router.post('/:courseId/enroll', authenticateToken, authorizeRoles('student'), e
 router.delete('/:courseId/enroll', authenticateToken, authorizeRoles('student'), unenrollCourse);
 router.post('/:courseId/rate', authenticateToken, authorizeRoles('student'), rateCourse);
 
+
+
 // Instructor
 router.get('/instructor/stats', authenticateToken, authorizeRoles('instructor'), getInstructorStats);
 router.get('/instructor', authenticateToken, authorizeRoles('instructor'), getInstructorCourses);
@@ -42,6 +46,7 @@ router.post('/:courseId/lessons', authenticateToken, authorizeRoles('instructor'
 
 // Admin
 router.get('/admin/all', authenticateToken, authorizeRoles('admin'), getAllCoursesAdmin);
+router.post('/admin/bulk-action', authenticateToken, authorizeRoles('admin'), bulkCourseAction);
 router.put('/:id/status', authenticateToken, authorizeRoles('admin'), updateCourseStatus);
 
 // Instructor Actions
@@ -49,5 +54,8 @@ router.post('/:id/submit', authenticateToken, authorizeRoles('instructor'), subm
 
 // Admin/Instructor
 router.delete('/:id', authenticateToken, authorizeRoles('admin', 'instructor'), deleteCourse);
+
+// Public - Specific ID route (Must be last to avoid capturing specific paths like /instructor, /stats)
+router.get('/:id', getCourseById as any);
 
 export default router;

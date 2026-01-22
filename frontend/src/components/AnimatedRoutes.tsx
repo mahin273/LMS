@@ -14,6 +14,8 @@ import LandingPage from '../pages/LandingPage';
 import AdminStudentsPage from '../pages/AdminStudentsPage';
 import AdminInstructorsPage from '../pages/AdminInstructorsPage';
 import AdminCoursesPage from '../pages/AdminCoursesPage';
+import InstructorDashboard from '@/pages/InstructorDashboard';
+import InstructorCoursesPage from '@/pages/InstructorCoursesPage';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import SystemLogsPage from '../pages/SystemLogsPage';
 import DatabaseSettingsPage from '../pages/DatabaseSettingsPage';
@@ -98,6 +100,18 @@ export default function AnimatedRoutes() {
                         </RoleRoute>
                     } />
                     <Route path="/courses/:courseId/lessons/:lessonId" element={<PageTransition><CoursePlayerPage /></PageTransition>} />
+
+                    {/* Instructor Routes */}
+                    <Route path="/instructor/dashboard" element={
+                        <RoleRoute requiredRole="instructor">
+                            <PageTransition><InstructorDashboard /></PageTransition>
+                        </RoleRoute>
+                    } />
+                    <Route path="/instructor/courses" element={
+                        <RoleRoute requiredRole="instructor">
+                            <PageTransition><InstructorCoursesPage /></PageTransition>
+                        </RoleRoute>
+                    } />
 
                     {/* Admin Routes */}
                     <Route path="/admin/students" element={<PageTransition><AdminStudentsPage /></PageTransition>} />

@@ -30,8 +30,15 @@ export const getLessons = async (req: Request, res: Response) => {
             return res.json(lessons);
         }
 
+        // Get lesson IDs for this course only
+        const courseLessonIds = lessons.map(l => l.id);
+
+        // Filter progress to only lessons in THIS course
         const progress = await LessonProgress.findAll({
-            where: { studentId: userId }
+            where: { 
+                studentId: userId,
+                lessonId: courseLessonIds
+            }
         });
         const completedLessonIds = new Set(progress.map(p => p.lessonId));
 
@@ -122,7 +129,6 @@ export const completeLesson = async (req: Request, res: Response) => {
     if (!studentId) return res.status(401).json({ error: 'Unauthorized' });
 
     try {
-
         const lesson = await Lesson.findByPk(lessonId);
         if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
 
@@ -138,12 +144,15 @@ export const completeLesson = async (req: Request, res: Response) => {
             }
         });
 
-        // 3. Trigger Gamification Engine
-        // Run asynchronously so we don't block the response?
-        // Ideally yes, but for now we await to ensure correctness in this synchronous flow.
-        await GamificationService.checkAndAwardBadges(studentId, lesson.courseId);
+        // Trigger Gamification Engine and get new badges
+        const result = await GamificationService.checkAndAwardBadges(studentId, lesson.courseId);
 
-        res.json({ message: 'Lesson completed', progress });
+        res.json({ 
+            message: 'Lesson completed', 
+            progress,
+            newBadges: result.newBadges || [],
+            progressPercent: result.progressPercent || 0
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to complete lesson' });

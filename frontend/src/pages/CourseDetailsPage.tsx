@@ -18,9 +18,8 @@ export default function CourseDetailsPage() {
     const { data: course, isLoading } = useQuery({
         queryKey: ['course-details', courseId],
         queryFn: async () => {
-            // Workaround: fetch all and find, as per previous logic.
-            const res = await client.get('/courses');
-            return res.data.find((c: any) => c.id === courseId);
+            const res = await client.get(`/courses/${courseId}`);
+            return res.data;
         }
     });
 

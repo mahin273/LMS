@@ -86,20 +86,18 @@ export default function ProfilePage() {
     // Mutation to update password
     const updatePasswordMutation = useMutation({
         mutationFn: async (data: PasswordFormValues) => {
-            // We need a specific endpoint for password or use the profile one if it handles it.
-            // Based on previous code, profile endpoint handled password.
-            // Let's reuse that but be careful.
             return client.put('/users/profile', {
                 password: data.newPassword,
-                // We might need to send current password for verification in a real app
+                currentPassword: data.currentPassword
             });
         },
         onSuccess: () => {
             toast.success("Password updated successfully");
             resetPassword();
         },
-        onError: () => {
-            toast.error("Failed to update password");
+        onError: (error: any) => {
+            const message = error.response?.data?.error || "Failed to update password";
+            toast.error(message);
         }
     });
 

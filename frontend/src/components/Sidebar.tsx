@@ -6,8 +6,10 @@ import { LayoutDashboard, BookOpen, Trophy, Settings, Shield, LogOut, Graduation
 import { useAuth } from '@/context/AuthContext';
 
 const sidebarItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['student', 'instructor', 'admin'] },
-    { icon: BookOpen, label: 'Courses', href: '/courses', roles: ['student', 'instructor'] },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', roles: ['student', 'admin'] },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/instructor/dashboard', roles: ['instructor'] },
+    { icon: BookOpen, label: 'Explore Courses', href: '/courses', roles: ['student'] },
+    { icon: BookOpen, label: 'My Courses', href: '/instructor/courses', roles: ['instructor'] },
     { icon: Trophy, label: 'Leaderboard', href: '/leaderboard', roles: ['student', 'instructor'] },
     { icon: Users, label: 'Manage Users', href: '/admin/users', roles: ['admin'] },
     { icon: Users, label: 'Students', href: '/admin/students', roles: ['admin'] },

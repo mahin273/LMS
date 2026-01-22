@@ -118,15 +118,39 @@ export const getEnrolledCourses = async (req: Request, res: Response) => {
 export const getInstructorCourses = async (req: Request, res: Response) => {
     const instructorId = (req as any).user?.id;
     try {
-        const courses = await Course.findAll({
-            where: { instructorId },
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const offset = (page - 1) * limit;
+        const search = req.query.search as string || '';
+
+        const whereClause: any = { instructorId };
+
+        if (search) {
+            whereClause.title = { [require('sequelize').Op.like]: `%${search}%` };
+        }
+
+        const { count, rows: courses } = await Course.findAndCountAll({
+            where: whereClause,
+            limit,
+            offset,
+            order: [['createdAt', 'DESC']],
             include: [
-                // Count students?
                 { model: User, as: 'students', attributes: ['id', 'name', 'email'] }
-            ]
+            ],
+            distinct: true // Important for correct count with includes
         });
-        res.json(courses);
+
+        res.json({
+            courses,
+            pagination: {
+                total: count,
+                page,
+                limit,
+                totalPages: Math.ceil(count / limit)
+            }
+        });
     } catch (error) {
+        console.error('Error fetching instructor courses:', error);
         res.status(500).json({ error: 'Failed to fetch instructor courses' });
     }
 };
@@ -147,6 +171,36 @@ export const getAllCoursesAdmin = async (req: Request, res: Response) => {
             whereClause.status = status;
         }
 
+        const instructorId = req.query.instructorId as string;
+        if (instructorId) {
+            whereClause.instructorId = instructorId;
+        }
+
+        const startDate = req.query.startDate as string;
+        const endDate = req.query.endDate as string;
+        if (startDate && endDate) {
+            whereClause.createdAt = {
+                [require('sequelize').Op.between]: [new Date(startDate), new Date(endDate)]
+            };
+        }
+
+        const minPrice = req.query.minPrice;
+        const maxPrice = req.query.maxPrice;
+        if (minPrice !== undefined && maxPrice !== undefined) {
+            whereClause.price = {
+                [require('sequelize').Op.between]: [minPrice, maxPrice]
+            };
+        } else if (minPrice !== undefined) {
+            whereClause.price = { [require('sequelize').Op.gte]: minPrice };
+        } else if (maxPrice !== undefined) {
+            whereClause.price = { [require('sequelize').Op.lte]: maxPrice };
+        }
+
+        const sortBy = req.query.sortBy as string;
+        const sortOrder = (req.query.sortOrder as string) || 'DESC';
+
+        console.log(`Instructor Fetch: ID=${instructorId} Page=${page} Limit=${limit} Offset=${offset}`);
+
         const { count, rows: courses } = await Course.findAndCountAll({
             where: whereClause,
             include: [
@@ -156,8 +210,9 @@ export const getAllCoursesAdmin = async (req: Request, res: Response) => {
             limit,
             offset,
             distinct: true,
-            order: [['createdAt', 'DESC']]
+            order: [[sortBy || 'createdAt', sortOrder || 'DESC']]
         });
+        console.log(`Found ${count} courses. Returning ${courses.length} rows.`);
 
         res.json({
             courses,
@@ -173,14 +228,42 @@ export const getAllCoursesAdmin = async (req: Request, res: Response) => {
     }
 };
 
+export const getCourseById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const course = await Course.findByPk(id, {
+            include: [
+                { model: User, as: 'instructor', attributes: ['id', 'name', 'email'] },
+                { model: User, as: 'students', attributes: ['id'] },
+                { model: Lesson, as: 'lessons', attributes: ['id', 'title', 'orderIndex'] }
+            ]
+        });
+
+        if (!course) {
+            return res.status(404).json({ error: 'Course not found' });
+        }
+
+        // Add calculated fields
+        const courseData = course.toJSON();
+        (courseData as any).studentCount = course.students?.length || 0;
+
+        res.json(courseData);
+    } catch (error) {
+        console.error('Error fetching course by ID:', error);
+        res.status(500).json({ error: 'Failed to fetch course details' });
+    }
+};
+
 export const createCourse = async (req: Request, res: Response) => {
     const instructorId = (req as any).user?.id;
-    const { title, description } = req.body;
+    const { title, description, price, thumbnail } = req.body;
     try {
         const course = await Course.create({
             instructorId: instructorId!,
             title,
             description,
+            price: price || 0,
+            thumbnail: thumbnail || null,
             status: 'draft'
         });
         res.status(201).json(course);
@@ -211,17 +294,21 @@ export const unenrollCourse = async (req: Request, res: Response) => {
     const studentId = (req as any).user?.id;
     const { courseId } = req.params;
     try {
-        const deleted = await Enrollment.destroy({
+        // Instead of deleting, update status to 'dropped'
+        const enrollment = await Enrollment.findOne({
             where: { studentId, courseId }
         });
 
-        if (deleted) {
-            res.json({ message: 'Unenrolled successfully' });
-        } else {
-            res.status(404).json({ error: 'Enrollment not found' });
+        if (!enrollment) {
+            return res.status(404).json({ error: 'Enrollment not found' });
         }
+
+        enrollment.status = 'dropped';
+        await enrollment.save();
+
+        res.json({ message: 'Course dropped successfully' });
     } catch (error) {
-        res.status(500).json({ error: 'Unenrollment failed' });
+        res.status(500).json({ error: 'Failed to drop course' });
     }
 }
 
@@ -241,6 +328,23 @@ export const rateCourse = async (req: Request, res: Response) => {
 
         if (!enrollment) {
             return res.status(404).json({ error: 'You are not enrolled in this course' });
+        }
+
+        // Check if student has completed at least 50% of the course
+        const totalLessons = await Lesson.count({ where: { courseId } });
+        if (totalLessons > 0) {
+            const lessonIds = (await Lesson.findAll({ where: { courseId }, attributes: ['id'] })).map(l => l.id);
+            const completedCount = await LessonProgress.count({
+                where: { studentId, lessonId: lessonIds }
+            });
+            const progressPercent = (completedCount / totalLessons) * 100;
+
+            if (progressPercent < 50) {
+                return res.status(400).json({
+                    error: 'You must complete at least 50% of the course before rating',
+                    currentProgress: Math.round(progressPercent)
+                });
+            }
         }
 
         enrollment.rating = rating;
@@ -292,6 +396,9 @@ export const updateCourse = async (req: Request, res: Response) => {
 
         course.title = title || course.title;
         course.description = description || course.description;
+        if (req.body.price !== undefined) course.price = req.body.price;
+        if (req.body.thumbnail !== undefined) course.thumbnail = req.body.thumbnail;
+
         await course.save();
 
         res.json(course);
@@ -340,7 +447,7 @@ export const getCourseAnalytics = async (req: Request, res: Response) => {
 
 export const updateCourseStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { status } = req.body; // 'published' | 'rejected'
+    const { status, rejectionReason } = req.body; // 'published' | 'rejected'
 
     if (!['published', 'rejected'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
@@ -351,6 +458,12 @@ export const updateCourseStatus = async (req: Request, res: Response) => {
         if (!course) return res.status(404).json({ error: 'Course not found' });
 
         course.status = status;
+        if (status === 'rejected' && rejectionReason) {
+            course.rejectionReason = rejectionReason;
+        } else if (status === 'published') {
+            course.rejectionReason = null; // Clear rejection reason if published
+        }
+
         await course.save();
 
         res.json({ message: `Course ${status}`, course });
@@ -512,5 +625,51 @@ export const getInstructorStats = async (req: Request, res: Response) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Failed to fetch instructor stats' });
+    }
+};
+
+export const bulkCourseAction = async (req: Request, res: Response) => {
+    const { courseIds, action } = req.body; // action: 'approve' | 'reject' | 'delete'
+    const { rejectionReason } = req.body;
+
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+        return res.status(400).json({ error: 'No courses selected' });
+    }
+
+    try {
+        if (action === 'delete') {
+            await Course.destroy({
+                where: {
+                    id: courseIds
+                }
+            });
+            return res.json({ message: `Successfully deleted ${courseIds.length} courses` });
+        }
+
+        if (action === 'approve') {
+            await Course.update({ status: 'published', rejectionReason: null }, {
+                where: {
+                    id: courseIds
+                }
+            });
+            return res.json({ message: `Successfully approved ${courseIds.length} courses` });
+        }
+
+        if (action === 'reject') {
+            await Course.update({
+                status: 'rejected',
+                rejectionReason: rejectionReason || 'Course rejected by admin'
+            }, {
+                where: {
+                    id: courseIds
+                }
+            });
+            return res.json({ message: `Successfully rejected ${courseIds.length} courses` });
+        }
+
+        return res.status(400).json({ error: 'Invalid action' });
+    } catch (error) {
+        console.error('Bulk action error:', error);
+        res.status(500).json({ error: 'Failed to perform bulk action' });
     }
 };
