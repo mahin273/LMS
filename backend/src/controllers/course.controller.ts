@@ -234,7 +234,7 @@ export const getCourseById = async (req: Request, res: Response) => {
         const course = await Course.findByPk(id, {
             include: [
                 { model: User, as: 'instructor', attributes: ['id', 'name', 'email'] },
-                { model: User, as: 'students', attributes: ['id'] },
+                { model: User, as: 'students', attributes: ['id', 'name', 'email', 'avatarUrl'] },
                 { model: Lesson, as: 'lessons', attributes: ['id', 'title', 'orderIndex'] }
             ]
         });
@@ -647,7 +647,7 @@ export const bulkCourseAction = async (req: Request, res: Response) => {
         }
 
         if (action === 'approve') {
-            await Course.update({ status: 'published', rejectionReason: null }, {
+            const [updateCount] = await Course.update({ status: 'published', rejectionReason: null }, {
                 where: {
                     id: courseIds
                 }
@@ -671,5 +671,95 @@ export const bulkCourseAction = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Bulk action error:', error);
         res.status(500).json({ error: 'Failed to perform bulk action' });
+    }
+};
+
+export const getInstructorStudents = async (req: Request, res: Response) => {
+    const instructorId = (req as any).user?.id;
+    try {
+        const courses = await Course.findAll({
+            where: { instructorId },
+            include: [
+                {
+                    model: User,
+                    as: 'students',
+                    attributes: ['id', 'name', 'email', 'avatarUrl'],
+                    through: { attributes: ['joinedAt', 'status'] }
+                }
+            ]
+        });
+
+        const studentsList: any[] = [];
+        const seen = new Set<string>();
+
+        courses.forEach((course) => {
+            if (course.students) {
+                course.students.forEach((student: any) => {
+                    // specific unique key per student-course enrollment
+                    const key = `${student.id}-${course.id}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        studentsList.push({
+                            studentId: student.id,
+                            studentName: student.name,
+                            studentEmail: student.email,
+                            studentAvatar: student.avatarUrl,
+                            courseId: course.id,
+                            courseTitle: course.title,
+                            joinedAt: student.Enrollment.joinedAt,
+                            status: student.Enrollment.status
+                        });
+                    }
+                });
+            }
+        });
+
+        res.json(studentsList);
+    } catch (error) {
+        console.error('Error fetching instructor students:', error);
+        res.status(500).json({ error: 'Failed to fetch students' });
+    }
+};
+
+export const toggleStudentBan = async (req: Request, res: Response) => {
+    const instructorId = (req as any).user?.id;
+    const { courseId, studentId } = req.body;
+
+    try {
+        // 1. Verify Instructor owns the course
+        const course = await Course.findByPk(courseId);
+        if (!course) {
+            return res.status(404).json({ error: 'Course not found' });
+        }
+        if (course.instructorId !== instructorId) {
+            return res.status(403).json({ error: 'Not authorized' });
+        }
+
+        // 2. Find Enrollment
+        const enrollment = await Enrollment.findOne({
+            where: { courseId, studentId }
+        });
+
+        if (!enrollment) {
+            return res.status(404).json({ error: 'Student not enrolled in this course' });
+        }
+
+        // 3. Toggle Status
+        if (enrollment.status === 'banned') {
+            enrollment.status = 'active'; // Unban
+        } else {
+            enrollment.status = 'banned'; // Ban
+        }
+
+        await enrollment.save();
+
+        res.json({
+            message: `Student ${enrollment.status === 'banned' ? 'banned' : 'unbanned'} successfully`,
+            status: enrollment.status
+        });
+
+    } catch (error) {
+        console.error('Error toggling ban status:', error);
+        res.status(500).json({ error: 'Failed to update student status' });
     }
 };

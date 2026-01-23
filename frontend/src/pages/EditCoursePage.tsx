@@ -44,8 +44,8 @@ export default function EditCoursePage() {
     const { data: course, isLoading: isLoadingCourse } = useQuery({
         queryKey: ['course', courseId],
         queryFn: async () => {
-            const res = await client.get('/courses/instructor');
-            return res.data.find((c: any) => c.id === courseId);
+            const res = await client.get(`/courses/${courseId}`);
+            return res.data;
         }
     });
 

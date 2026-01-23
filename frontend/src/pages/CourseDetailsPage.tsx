@@ -133,7 +133,7 @@ export default function CourseDetailsPage() {
                                 </CardHeader>
 
                                 <CardContent className="space-y-6 pt-6">
-                                    {isStudent ? (
+                                    {isStudent || user?.role === 'instructor' || user?.role === 'admin' ? (
                                         <Button
                                             size="lg"
                                             className="w-full text-lg h-14 shadow-lg shadow-primary/25 animate-pulse-hover"
@@ -145,9 +145,7 @@ export default function CourseDetailsPage() {
                                         </Button>
                                     ) : (
                                         <Button variant="secondary" className="w-full h-12" disabled>
-                                            {user?.role === 'instructor' ? 'Instructors cannot enroll' :
-                                                user?.role === 'admin' ? 'Admins cannot enroll' :
-                                                    'Log in as Student to Enroll'}
+                                            Log in to Enroll
                                         </Button>
                                     )}
 

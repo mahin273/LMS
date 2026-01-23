@@ -6,7 +6,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Trash2, Edit, ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react';
+import { Trash2, Edit, ChevronLeft, ChevronRight, Plus, Search, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -75,6 +75,19 @@ export default function InstructorCoursesPage() {
         },
         onError: () => {
             toast.error('Failed to delete course');
+        }
+    });
+
+    const submitMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await client.post(`/courses/${id}/submit`);
+        },
+        onSuccess: () => {
+            toast.success('Course submitted for approval');
+            queryClient.invalidateQueries({ queryKey: ['instructor-courses-page'] });
+        },
+        onError: () => {
+            toast.error('Failed to submit course');
         }
     });
 
@@ -168,6 +181,22 @@ export default function InstructorCoursesPage() {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-2">
+                                            {(course.status === 'draft' || course.status === 'rejected') && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    title="Submit for Approval"
+                                                    onClick={() => {
+                                                        if (confirm('Submit this course for admin approval?')) {
+                                                            submitMutation.mutate(course.id);
+                                                        }
+                                                    }}
+                                                    disabled={submitMutation.isPending}
+                                                >
+                                                    Submit
+                                                </Button>
+                                            )}
                                             <Link to={`/courses/${course.id}/edit`}>
                                                 <Button variant="ghost" size="icon">
                                                     <Edit className="h-4 w-4" />

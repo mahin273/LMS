@@ -15,7 +15,9 @@ import {
     getInstructorStats,
     getCourseById,
     getAllCoursesAdmin,
-    bulkCourseAction
+    bulkCourseAction,
+    getInstructorStudents,
+    toggleStudentBan
 } from '../controllers/course.controller';
 import { getLessons, createLesson } from '../controllers/lesson.controller';
 import { authenticateToken, authorizeRoles } from '../middleware/auth.middleware';
@@ -35,6 +37,8 @@ router.post('/:courseId/rate', authenticateToken, authorizeRoles('student'), rat
 
 // Instructor
 router.get('/instructor/stats', authenticateToken, authorizeRoles('instructor'), getInstructorStats);
+router.get('/instructor/students', authenticateToken, authorizeRoles('instructor'), getInstructorStudents);
+router.post('/instructor/student-status', authenticateToken, authorizeRoles('instructor'), toggleStudentBan);
 router.get('/instructor', authenticateToken, authorizeRoles('instructor'), getInstructorCourses);
 router.post('/', authenticateToken, authorizeRoles('instructor'), createCourse);
 router.put('/:id', authenticateToken, authorizeRoles('instructor', 'admin'), updateCourse);

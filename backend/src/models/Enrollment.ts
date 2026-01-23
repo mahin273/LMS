@@ -4,7 +4,7 @@ import sequelize from '../config/database';
 interface EnrollmentAttributes {
     studentId: string;
     courseId: string;
-    status: 'active' | 'completed' | 'dropped';
+    status: 'active' | 'completed' | 'dropped' | 'banned';
     joinedAt: Date;
     rating?: number;
     review?: string;
@@ -13,7 +13,7 @@ interface EnrollmentAttributes {
 class Enrollment extends Model<EnrollmentAttributes> implements EnrollmentAttributes {
     public studentId!: string;
     public courseId!: string;
-    public status!: 'active' | 'completed' | 'dropped';
+    public status!: 'active' | 'completed' | 'dropped' | 'banned';
     public joinedAt!: Date;
     public rating?: number;
     public review?: string;
@@ -33,7 +33,7 @@ Enrollment.init(
             primaryKey: true,
         },
         status: {
-            type: DataTypes.ENUM('active', 'completed', 'dropped'),
+            type: DataTypes.ENUM('active', 'completed', 'dropped', 'banned'),
             defaultValue: 'active',
         },
         joinedAt: {
